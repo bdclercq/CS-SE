@@ -20,8 +20,8 @@ def create_app(script_info=None):
     db.init_app(app)
 
     # register blueprints
-    from project.api.ratings import ratings_blueprint
-    app.register_blueprint(ratings_blueprint)
+    from project.api.banking import banking_blueprint
+    app.register_blueprint(banking_blueprint)
 
     # shell context for flask cli
     @app.shell_context_processor

@@ -5,6 +5,7 @@ from project import db
 
 class Keyvault(db.Model):
     __tablename__ = 'keyvault'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     encrypted = db.Column(db.String(128), nullable=False)
     decrypted = db.Column(db.String(128), nullable=False)
 
