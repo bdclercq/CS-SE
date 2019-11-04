@@ -1,0 +1,84 @@
+version: '3.6'
+
+services:
+
+  users:
+    build:
+      context: ./services/users
+      dockerfile: Dockerfile
+    volumes:
+      - './services/users:/usr/src/app'
+    ports:
+      - 5001:5001
+    environment:
+      - FLASK_ENV=development
+      - APP_SETTINGS=project.config.DevelopmentConfig
+      - DATABASE_URL=postgres://postgres:postgres@users-db:5432/users_db
+    depends_on:
+      - users-db
+
+  users-db:
+    build:
+      context: ./services/users/project/db
+      dockerfile: Dockerfile
+    ports:
+      - 5433:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
+  banking:
+    build:
+      context: ./services/banking
+      dockerfile: Dockerfile
+    volumes:
+      - './services/banking:/usr/src/app'
+    ports:
+      - 5002:5002
+    environment:
+      - FLASK_ENV=development
+      - APP_SETTINGS=project.config.DevelopmentConfig
+
+  keyvault:
+    build:
+      context: ./services/keyvault
+      dockerfile: Dockerfile
+    volumes:
+      - './services/keyvault:/usr/src/app'
+    ports:
+      - 5003:5003
+    environment:
+      - FLASK_ENV=development
+      - APP_SETTINGS=project.config.DevelopmentConfig
+      - DATABASE_URL=postgres://postgres:postgres@stops-db:5432/keyvault_db
+    depends_on:
+      - keyvault-db
+
+  keyvault-db:
+    build:
+      context: ./services/keyvault/project/db
+      dockerfile: Dockerfile
+    ports:
+      - 5435:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
+  interface:
+    build:
+      context: ./services/interface
+      dockerfile: Dockerfile
+    volumes:
+      - './services/interface:/usr/src/app'
+    ports:
+      - 5000:5000
+    environment:
+      - FLASK_ENV=development
+      - APP_SETTINGS=project.config.DevelopmentConfig
+      - PORT=5005
+      - USERS_URI=http://users:5001
+      - VEHICLES_URI=http://vehicles:5004
+    depends_on:
+      - users
+      - banking
+      - keyvault

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container">
+        <div class="column is-one-third">
+            <br>
+            <h1 class="title">Start your search</h1>
+            <hr>
+            <br>
+            {% if provs %}
+            Please select one of the following options:<br>
+                {% for prov in provs %}
+                    {{ prov['omschrijving'] }}
+                    &emsp;
+                    <a href="/view_stops_province/{{ prov['entiteitnummer'] }}">All stops for this province</a>
+                    &emsp;
+                    <a href="/view_lines/{{ prov['entiteitnummer'] }}">All lines for this province</a>
+                    &emsp;
+                    <a href="/view_locations/{{ prov['entiteitnummer'] }}">All locations for this province</a>
+                    <br>
+                {% endfor %}
+        {% endif %}
+        </div>
+    </div>
+{% endblock %}

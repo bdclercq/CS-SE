@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container">
+        <h1 class="title">Detail page</h1>
+            <hr>
+        {% if data %}
+            <div class="row">
+                <div class="col">
+                    {% if stop == True %}
+                        Details about the stop:<br>
+                        <div class="col">
+                            <li>{{ data['stop'] }}</li>
+                            <li>Located in {{ data['location'] }}, {{ data['prov'] }}</li>
+                            <li>Coordinates: ({{ data['lat'] }}, {{ data['lon'] }})</li>
+                            <li>Average rated score: {{ data['average_score'] }}</li>
+                        </div>
+                        <br>
+                        <br>
+                        About provinces:<br>
+                        <div class="col">
+                            {% if provs %}
+                                {% for prov in provs %}
+                                    {{ prov['entiteitnummer'] }} <=> {{ prov['omschrijving'] }}<br>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% elif vehicle == True %}
+                        <div class="col">
+                            <li>Vehicle type: {{ data['type'] }}</li>
+                            <li>Vehicle ID: {{ data['id'] }}</li>
+                            <li>Vehicle score: {{ data['average score'] }}</li>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col">
+                    This is what other people have to say:<br>
+                    {% if records|length > 0 %}
+                        <div class="col" style="overflow-y: scroll; height:600px;">
+                            {% for record in records %}
+                                <li>
+                                    {{ record['rated_by'] }}:<br>
+                                    {{ record['score'] }}<br>
+                                    {{ record['description'] }}<br>
+                                    {% if stop == True %}
+                                        <a href="/remove_ratings/{{ record['rating_for'] }}/1/{{ record['id'] }}">Remove your rating</a><br>
+                                    {% elif vehicle == True %}
+                                        <a href="/remove_ratings/{{ record['rating_for'] }}/0/{{ record['id'] }}">Remove your rating</a><br>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        No ratings yet.
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
