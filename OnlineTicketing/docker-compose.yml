@@ -39,6 +39,31 @@ services:
       - FLASK_ENV=development
       - APP_SETTINGS=project.config.DevelopmentConfig
 
+  tickets:
+    build:
+      context: ./services/tickets
+      dockerfile: Dockerfile
+    volumes:
+      - './services/tickets:/usr/src/app'
+    ports:
+      - 5004:50014
+    environment:
+      - FLASK_ENV=development
+      - APP_SETTINGS=project.config.DevelopmentConfig
+      - DATABASE_URL=postgres://postgres:postgres@tickets-db:5432/tickets_db
+    depends_on:
+      - tickets-db
+
+  tickets-db:
+    build:
+      context: ./services/tickets/project/db
+      dockerfile: Dockerfile
+    ports:
+      - 5434:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
   keyvault:
     build:
       context: ./services/keyvault
@@ -50,7 +75,7 @@ services:
     environment:
       - FLASK_ENV=development
       - APP_SETTINGS=project.config.DevelopmentConfig
-      - DATABASE_URL=postgres://postgres:postgres@stops-db:5432/keyvault_db
+      - DATABASE_URL=postgres://postgres:postgres@keyvault-db:5432/keyvault_db
     depends_on:
       - keyvault-db
 
@@ -82,3 +107,4 @@ services:
       - users
       - banking
       - keyvault
+      - tickets

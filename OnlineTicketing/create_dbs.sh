@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 echo Creating users database...
 docker-compose exec users python manage.py recreate-db
+docker-compose exec users python manage.py seed-db
 echo Creating keyvault database...
 docker-compose exec keyvault python manage.py recreate-db
+echo Creating tickets database...
+docker-compose exec tickets python manage.py recreate-db
+docker-compose exec tickets python manage.py seed-db
