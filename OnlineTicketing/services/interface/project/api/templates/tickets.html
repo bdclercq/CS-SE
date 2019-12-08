@@ -13,7 +13,10 @@
             <hr>
             {% if tickets %}
                 {% for ticket in tickets %}
-                    {{ ticket.amount }} tickets available at {{ ticket.price }} for {{ ticket.from }} - {{ ticket.until }}<br>
+                    {{ ticket.amount }} tickets available at {{ ticket.price }} for {{ ticket.from }} - {{ ticket.until }}
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href = '/Tickets/buy/{{ ticket.from }}/{{ ticket.until }}';">
+                        Buy tickets
+                    </button><br>
                 {% endfor %}
             {% else %}
                 <p>No tickets found!</p>

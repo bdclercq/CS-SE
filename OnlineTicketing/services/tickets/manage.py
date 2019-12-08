@@ -18,8 +18,8 @@ def recreate_db():
 @cli.command()
 def seed_db():
     """Seeds the database."""
-    db.session.add(Ticket(period_from=datetime.datetime(2020, 7, 20), period_to=datetime.datetime(2020, 7, 22)))
-    db.session.add(Ticket(period_from=datetime.datetime(2020, 8, 2), period_to=datetime.datetime(2020, 8, 4)))
+    db.session.add(Ticket(period_from=datetime.datetime(2020, 7, 20), period_to=datetime.datetime(2020, 7, 22), amount=10000000, unit_price=69))
+    db.session.add(Ticket(period_from=datetime.datetime(2020, 8, 2), period_to=datetime.datetime(2020, 8, 4), amount=10000000, unit_price=69))
     db.session.commit()
 
 

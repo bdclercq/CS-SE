@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, render_template, redirect
 import requests
 import json
+from datetime import datetime
 
 UI_blueprint = Blueprint('interface', __name__, template_folder='./templates')
 
@@ -37,5 +38,27 @@ def add_user():
 
 @UI_blueprint.route('/Tickets', methods=['GET'])
 def ticket_management():
+    tickets = requests.get("http://tickets:5004/get_tickets")
+    return render_template("tickets.html", tickets=tickets.json()['data']['tickets'])
+
+
+@UI_blueprint.route('/Tickets/buy/<dfrom>/<dto>', methods=['POST', 'GET'])
+def buy_tickets(dfrom, dto):
+    from_stamp = datetime.strptime(dfrom, '%a, %d %b %Y %H:%M:%S %Z')
+    to_stamp = datetime.strptime(dto, '%a, %d %b %Y %H:%M:%S %Z')
+    print(from_stamp, to_stamp)
+    return render_template("buy_tickets.html", period=(from_stamp.date(), to_stamp.date()))
+
+
+@UI_blueprint.route('/place_order', methods=['POST'])
+def place_order():
+    result = request.form
+    mail = result['email']
+    pwd = result['password']
+    amount = result['amount']
+    total = result['total']
+    dfrom = result['dfrom']
+    dto = result['dto']
+    print(mail, pwd, amount, total, dfrom, dto)
     tickets = requests.get("http://tickets:5004/get_tickets")
     return render_template("tickets.html", tickets=tickets.json()['data']['tickets'])

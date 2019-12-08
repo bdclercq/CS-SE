@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+
+    {% if message %}
+        {{ message }}<br>
+        Please try again.<br>
+    {% endif %}
+
+    {% if period %}
+        <div class="container">
+            <div class="column is-one-third">
+                <br>
+                <h1 class="title">Buy tickets for {{ period[0] }} - {{ period[1] }}</h1>
+                <hr>
+                <br>
+                <form action="/place_order" method="POST">
+                    <script>
+                        function UpdateTotal() {
+                            /* Get prices and calculate total */
+                            var ticketPrice = document.getElementById("price");
+                            var ticketAmount = document.getElementById("amount");
+                            var amount = parseInt(ticketAmount.value, 10);
+                            var price = parseInt(ticketPrice.value, 10);
+                            console.log(amount);
+                            console.log(price);
+                            var total = price * amount;
+                            console.log(total);
+
+                            /* Attempt to update the value (Inside a TD tag) */
+                            document.getElementById('total').value=total;
+                        }
+                    </script>
+{#                    <div class="field" id="dfrom" name="dfrom" type="text" size="6" readonly> From: {{ period[0] }} </div>#}
+{#                    <div class="field" id="dto" name="dto" type="text" size="6" readonly> To: {{ period[1] }} </div>#}
+                    <div class="field">
+                        <input
+                                id="dfrom" name="dfrom" class="input" value="{{ period[0] }}" readonly> From
+                    </div>
+                    <div class="field">
+                        <input
+                                id="dto" name="dto" class="input" value="{{ period[1] }}" readonly> To
+                    </div>
+                    <div class="field">
+                        <input
+                                id="amount" name="amount" onchange="UpdateTotal();"
+                                type="number" min="0" max="4" step="1" placeholder="Amount" size="6" required>
+                    </div>
+                    <div class="field">
+                        <input
+                                id="price" name="price" class="input"
+                                type="number" value="69" size="6" readonly>
+                    </div>
+                    <div class="field"> €
+                        <input
+                                id="total" name="total" class="input" type="text" >
+                    </div>
+                    <div class="field">
+                        <input
+                                name="email" class="input"
+                                type="email" placeholder="email" required>
+                    </div>
+                    <div class="field">
+                        <input
+                                name="password" class="input"
+                                type="password" placeholder="password" required>
+                    </div>
+                    <input
+                            type="submit" class="button is-primary is-fullwidth"
+                            value="Submit">
+                </form>
+
+            </div>
+        </div>
+    {% endif %}
+
+
+{% endblock %}
