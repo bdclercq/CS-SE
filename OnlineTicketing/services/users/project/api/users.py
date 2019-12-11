@@ -59,6 +59,29 @@ def authenticate(email, passwd):
         return jsonify(response_object), 404
 
 
+@users_blueprint.route('/get_creditcard/<email>,<passwd>', methods=['GET'])
+def get_creditcard(email, passwd):
+    response_object = {
+        'status': 'fail',
+        'message': 'User does not exist'
+    }
+    try:
+        exists = User.query.filter_by(email=email, password=passwd).scalar() is not None
+        if not exists:
+            return jsonify(response_object), 404
+        else:
+            user = User.query.filter_by(email=email, password=passwd).first()
+            response_object = {
+                'status': 'success',
+                'data': {
+                    'creditcard': user.creditcard
+                }
+            }
+            return jsonify(response_object), 200
+    except ValueError:
+        return jsonify(response_object), 404
+
+
 @users_blueprint.route('/get_users', methods=['GET'])
 def get_users():
     """Get all users"""

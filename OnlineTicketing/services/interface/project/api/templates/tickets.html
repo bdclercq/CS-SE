@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 
+    {% if message %}
+        {{ message }}<br>
+    {% endif %}
+
     <div class="container">
         <div class="column is-one-third">
             <br>
