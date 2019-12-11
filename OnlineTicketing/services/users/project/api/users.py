@@ -18,10 +18,11 @@ def add_user():
         return jsonify(response_object), 400
     email = post_data['email']
     password = post_data['pwd']
+    creditcard = post_data['creditcard']
     try:
         user = db.session.query(User.email).filter_by(email=email).scalar() is not None
         if not user:
-            db.session.add(User(email=email, password=password))
+            db.session.add(User(email=email, password=password, creditcard=creditcard))
             db.session.commit()
             response_object['status'] = 'success'
             response_object['message'] = f'{email} was added!'

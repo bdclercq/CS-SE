@@ -59,7 +59,7 @@ def place_order():
     total = result['total']
     dfrom = result['dfrom']
     dto = result['dto']
-    print(mail, pwd, amount, total, dfrom, dto) 
+    print(mail, pwd, amount, total, dfrom, dto)
     tickets = requests.get("http://tickets:5004/get_tickets")
     auth = requests.get("http://users:5001/authenticate/{0},{1}".format(mail, pwd)).json()
     if auth['status'] == 'success':
