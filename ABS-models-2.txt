@@ -1,6 +1,28 @@
 module TML;
 import * from ABS.DC;
 
+interface Client {
+  	Unit run();
+}
+
+class ClosedClient (Int cycle, Rat cost, Int nbrOfJobs) implements Client {
+  Int jobcount = 0;
+  Unit run() {
+    await duration(cycle, cycle);
+    await duration(200,250); jobcount = jobcount + 1;
+    if (jobcount < nbrOfJobs) { this!run(); }
+  }
+}
+
+class OpenClient (Int cycle, Rat cost, Int nbrOfJobs) implements Client {
+  Int jobcount = 0;
+  Unit run() {
+    await duration(200,250); jobcount = jobcount + 1;
+    await duration(cycle, cycle);
+    if (jobcount < nbrOfJobs) { this!run(); }
+  }
+}
+
 interface Worker {
 	Bool process(Rat taskCost, Time started, Duration deadline);
 }
@@ -249,7 +271,7 @@ class Tickets() implements Tickets{
   	lb.addWorker(shop3);
   	lb.addWorker(shop4);
 	
-	Int nrJobs = 1000;
+	Int nrJobs = 100;
 	while(nrJobs>0){
 		Shop s = lb.getWorker();
 		User u = new User(toString(nrJobs), 22, "visa", "email", kv);
@@ -259,5 +281,20 @@ class Tickets() implements Tickets{
 		nrJobs = nrJobs - 1;
 	}
       
+	Int nClosedClients = 30;
+  	Int nOpenClients = 80;
+  	Int taskCost = 20;
+  	Int nbrOfJobs = 10;
+  	Int nClts = 0;
+  
+  	await duration(50,50); nClts = nClosedClients;
+    while (nClts > 0) { new ClosedClient(5,taskCost, nbrOfJobs); nClts = nClts - 1;}
+    await duration(50,50); nClts = nOpenClients;
+    while (nClts > 0) { new OpenClient(1, taskCost, nbrOfJobs); nClts = nClts - 1;}
+    await duration(50,50); nClts = nClosedClients;
+    while (nClts > 0) { new ClosedClient(5,taskCost, nbrOfJobs); nClts = nClts - 1;}
+    await duration(50,50); nClts = nOpenClients;
+    while (nClts > 0) { new OpenClient(1, taskCost, nbrOfJobs); nClts = nClts - 1;}  
+	 
   	println("DONE");
 }
