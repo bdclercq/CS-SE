@@ -61,4 +61,19 @@ def place_order():
     dto = result['dto']
     print(mail, pwd, amount, total, dfrom, dto)
     tickets = requests.get("http://tickets:5004/get_tickets")
-    return render_template("tickets.html", tickets=tickets.json()['data']['tickets'])
+    auth = requests.get("http://users:5001/authenticate/{0},{1}".format(mail, pwd)).json()
+    if auth['status'] == 'success':
+        status = requests.get("http://tickets:5004/check_available/{0}/{1}/{2}".format(amount, dfrom, dto)).json()
+        if status['status'] == 'success':
+            creditcard = requests.get("http://users:5001/get_creditcard/{0},{1}".format(mail, pwd)).json()['data']['creditcard']
+            bank_status = requests.get("http://banking:5002/pay_tickets/{0}/{1}".format(amount, creditcard)).json()
+            if bank_status['status'] == 'success':
+                tickets = requests.get("http://tickets:5004/get_tickets")
+            else:
+                release = requests.get("http://tickets:5004/release_tickets/{0}/{1}/{2}".format(amount, dfrom, dto)).json()
+                if not release['status'] == 'success':
+                    return render_template("tickets.html", tickets=tickets.json()['data']['tickets'],
+                                           message='Something went wrong releasing tickets')
+        return render_template("tickets.html", tickets=tickets.json()['data']['tickets'], message=status['data'])
+    else:
+        return render_template("tickets.html", tickets=tickets.json()['data']['tickets'], message='Authentication failed')
