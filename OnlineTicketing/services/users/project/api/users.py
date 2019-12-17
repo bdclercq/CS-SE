@@ -18,10 +18,13 @@ def add_user():
         return jsonify(response_object), 400
     email = post_data['email']
     password = post_data['pwd']
+    name = post_data['name']
+    age = post_data['age']
+    creditcard = post_data['creditcard']
     try:
         user = db.session.query(User.email).filter_by(email=email).scalar() is not None
         if not user:
-            db.session.add(User(email=email, password=password))
+            db.session.add(User(email=email, password=password, age=age, name=name, creditcard=creditcard))
             db.session.commit()
             response_object['status'] = 'success'
             response_object['message'] = f'{email} was added!'
@@ -57,26 +60,3 @@ def authenticate(email, passwd):
             return jsonify(response_object), 200
     except ValueError:
         return jsonify(response_object), 404
-
-
-@users_blueprint.route('/get_users', methods=['GET'])
-def get_users():
-    """Get all users"""
-    response_object = {
-        'status': 'success',
-        'data': {
-            'users': [user.to_json() for user in User.query.all()]
-        }
-    }
-    return jsonify(response_object), 200
-
-
-@users_blueprint.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        db.session.add(User(email=email, password=password))
-        db.session.commit()
-    users = User.query.all()
-    return render_template('index.html', users=users)
