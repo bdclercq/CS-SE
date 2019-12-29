@@ -1,0 +1,98 @@
+\documentclass[10pt,a4paper,twocolumn]{article}
+\usepackage[left=1in, right=1in, top=1in, bottom=1in]{geometry}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\author{Beau De Clercq}
+\title{Online Ticketing}
+\begin{document}
+	
+\maketitle	
+\begin{abstract}
+
+\end{abstract}
+
+\section*{Requirements}
+\begin{itemize}
+	\item A user will need to register at least 2 weeks before the tickets go on sale.
+	\item In the event that there are no available tickets left, the user should immediately get a message stating that the event is sold out.
+	\item The whole action of buying tickets should take no more than ten minutes.
+	\item In the final product some form of load balancing should be present to ensure the system can handle peak loads.
+	\item The banking service should verify whether the user has sufficient funds left on their account.
+	\item All communication should happen in a secure way by means of messages encrypted by a user-specific key which is stored in a secure keyvault.
+\end{itemize}
+\section{Assumptions}
+For this project a few assumptions were made:
+\begin{itemize}
+	\item During registration, the encryption key for each user was immediately stored in the keyvault such that when the tickets will go on sale this keyvault can be distributed to the other services and thereby reducing the potential bottleneck.\\
+	We believe that this will not compromise the security requirements due to the fact that all services should be equally protected against potential attacks.
+\end{itemize}
+
+\section{Simulations}
+\subsection{Design}
+In order to make a simulation of the eventual system, we used the ABS modeling language to verify whether the system would be able to satisfy the different requirements.\\
+In a first step the necessary services needed to be composed. After some deliberations we settled on following list of core services:
+\begin{itemize}
+	\item a Users service that will be responsible for the registration and eventual authentication of users,
+	\item an Interface service which will act as the interface between the user and the ticketing service,
+	\item a Banking service to simulate the times a user would have to wait while his or her payment is being executed,
+	\item a Tickets service which acts as database to keep track of the amount of tickets that are still available.
+\end{itemize}
+Additionally we added a load balancer based on the Round Robin principle in order to verify whether our model would be able to handle peak loads.\\
+In this implementation we made the assumption that each of the individual services has its own copy of the keyvault.
+
+\subsection{Calibration}
+After we composed all of our services we decided to add some calibrations concerning timings.\\
+For instance, not all banks will have the same response time. In order to try and simulate this fact we added three different time values in which the banking service will respond: 1 second for bank X, 2 seconds for bank Y and 5 seconds for bank Z. \\
+When running the system with these parameters we got following result:\\
+\newpage
+\begin{table}[]
+	\begin{tabular}{lll}
+	Bank	& Transaction time & Total request time\\
+		& in seconds	& in seconds	\\
+	X	& 1 & 6.15 \\
+		& 0.1 & 0.75 \\
+		& 0.01 & 0.209 \\
+	Y	& 2 & 8.15 \\
+		& 0.2 &  \\
+		& 0.02 & 0.2295 \\
+	Z	& 5 & 15.15 \\
+		& 0.5 &  \\
+		& 0.05 & 0.2995
+	\end{tabular}
+	\caption{\label{tab:banking-time-influence}Influence of transaction times.}
+\end{table}\noindent
+From this table it is clear that the time needed to complete a transaction plays an important role in the overall $<$find good word$>$ of the system. In what follows we assume that a Service Level Agreement has been made to ensure that the time needed to complete a transaction will stay at or below the 1 second threshold.\\
+
+\subsection{Meeting the requirements}
+The first requirement of the system is that a user should never have to wait for more than 10 minutes. To this end there should be some sort of load balancing in place for the system to handle peak-loads.\\
+In order to determine the number of servers that would be needed to satisfy this requirement we propose following:\\
+Assume $N$ tickets are being sold and that, in the worst case scenario, each user buys 1 ticket. Let us put the worst case time needed to complete a transaction at $<$insert average value$>$ ($<$insert calculation from table$>$)seconds. In the desired 10 minutes (=600 seconds) time limit one single server can then process $X = <$insert values$>$ request. This means that, worst case, $R = N-X$ tickets are left after the initial 10 minutes.
+
+\section{Proof of concept}
+\subsection{Design}
+
+\subsection{Calibration}
+
+\subsection{Meeting the requirements}
+
+\section{Can it be build?}
+
+\section{Next steps}
+
+\newpage
+\newpage
+\section*{Appendix}
+\appendix
+\section{Class diagram}
+
+\section{Deployment diagram}
+
+\section{Sequence diagrams}
+
+
+
+
+\end{document}
