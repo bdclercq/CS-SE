@@ -5,6 +5,39 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
+\usepackage[toc,page]{appendix}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{eclipseStrings}{RGB}{42,0.0,255}
+\definecolor{eclipseKeywords}{RGB}{127,0,85}
+\colorlet{numb}{magenta!60!black}
+
+\lstdefinelanguage{json}{
+	basicstyle=\tiny\ttfamily,
+	commentstyle=\color{eclipseStrings}, % style of comment
+	stringstyle=\color{eclipseKeywords}, % style of strings
+	tabsize=2,
+	showstringspaces=false,
+	breaklines=true,
+	frame=lines,
+	string=[s]{"}{"},
+	comment=[l]{:\ "},
+	morecomment=[l]{:"},
+	literate=
+	*{0}{{{\color{numb}0}}}{1}
+	{1}{{{\color{numb}1}}}{1}
+	{2}{{{\color{numb}2}}}{1}
+	{3}{{{\color{numb}3}}}{1}
+	{4}{{{\color{numb}4}}}{1}
+	{5}{{{\color{numb}5}}}{1}
+	{6}{{{\color{numb}6}}}{1}
+	{7}{{{\color{numb}7}}}{1}
+	{8}{{{\color{numb}8}}}{1}
+	{9}{{{\color{numb}9}}}{1}
+}
+
+
 \author{Beau De Clercq}
 \title{Online Ticketing}
 \begin{document}
@@ -45,34 +78,82 @@ In this implementation we made the assumption that each of the individual servic
 
 \subsection{Calibration}
 After we composed all of our services we decided to add some calibrations concerning timings.\\
-For instance, not all banks will have the same response time. In order to try and simulate this fact we added three different time values in which the banking service will respond: 1 second for bank X, 2 seconds for bank Y and 5 seconds for bank Z. \\
-When running the system with these parameters we got following result:\\
-\newpage
-\begin{table}[]
+For instance, not all banks will have the same response time. In order to try and simulate this fact we added three different time values in which the banking service will respond. \\
+When running the system with different configurations we the results shown in Table \ref{tab:banking-time-influence-synchronous} and Table \ref{tab:banking-time-influence-asynchronous}.
+
+\begin{table*}[]
 	\begin{tabular}{lll}
-	Bank	& Transaction time & Total request time\\
-		& in seconds	& in seconds	\\
-	X	& 1 & 6.15 \\
-		& 0.1 & 0.75 \\
-		& 0.01 & 0.209 \\
-	Y	& 2 & 8.15 \\
-		& 0.2 &  \\
-		& 0.02 & 0.2295 \\
-	Z	& 5 & 15.15 \\
-		& 0.5 &  \\
-		& 0.05 & 0.2995
+		Bank				& Transaction time & Total request time\\
+								& in seconds		   & in seconds	\\
+		X					 & 1 						  & 6.100 \\
+								& 0.1 						& 0.700 \\
+								& 0.01 					   & 0.160 \\
+		Y				   & 2 							& 8.100 \\
+								& 0.2 						&  0.900\\
+								& 0.02 					   & 0.180 \\
+		Z				   & 5 							& 15.100 \\
+								& 0.5 						&  1.600\\
+								& 0.05 					   & 0.250
 	\end{tabular}
-	\caption{\label{tab:banking-time-influence}Influence of transaction times.}
-\end{table}\noindent
-From this table it is clear that the time needed to complete a transaction plays an important role in the overall $<$find good word$>$ of the system. In what follows we assume that a Service Level Agreement has been made to ensure that the time needed to complete a transaction will stay at or below the 1 second threshold.\\
+	\caption{\label{tab:banking-time-influence-synchronous}Influence of transaction times in a synchronous system (maximum 200 requests).}
+\end{table*}\noindent
+
+\begin{table*}[t]
+	\scalebox{0.9}{%
+	\begin{tabular}{llllll}
+	Amount of servers	 & Amount of tickets 	& Number of requests & Bank				& Transaction time & Total request time\\
+									 &									&								  &						& in seconds		   & in seconds	\\
+	1 								& 10000 					  & 1000 						& X					 & 1 						  & 55.350 \\
+									 &									& 								  &						& 0.1 						& 50.600\\
+									 &									& 								  &						& 0.01 					   & 50.110 \\
+									 &									& 								  &Y				   & 2 							& 56.100 \\
+									 &									& 								  &						& 0.2 						& 50.050\\
+									 &									& 								  &						& 0.02 					   & 47.500 \\
+									 &									& 								  &Z				   & 5 							& 60.100 \\
+									 &									& 								  &						& 0.5 						& 51.100\\
+									 &									& 								  &						& 0.05 					   & 50.200\\
+	2 								& 10000 					  & 1000 						& X					 & 1 						  & 30.100 \\
+									&									& 								  &						& 0.1 						& 25.600 \\
+									&									& 								  &						& 0.01 					   & 25.110 \\
+									&									& 								  &Y				   & 2 							& 31.150 \\
+									&									& 								  &						& 0.2 						& 25.700\\
+									&									& 								  &						& 0.02 					   & 25.130 \\
+									&									& 								  &Z				   & 5 							& 35.100 \\
+									&									& 								  &						& 0.5 						& 26.100\\
+									&									& 								  &						& 0.05 					   & 25.200\\
+	3 								& 10000 					  & 1000 						& X					 & 1 						  & 21.850 \\
+									&									& 								  &						& 0.1 						& 17.300 \\
+									&									& 								  &						& 0.01 					   & 16.810 \\
+									&									& 								  &Y				   & 2 							& 22.900 \\
+									&									& 								  &						& 0.2 						& 17.500\\
+									&									& 								  &						& 0.02 					   & 16.880 \\
+									&									& 								  &Z				   & 5 							& 26.800 \\
+									&									& 								  &						& 0.5 						& 17.800\\
+									&									& 								  &						& 0.05 					   & 16.900\\
+	4 								& 10000 					  & 1000 						& X					 & 1 						  & 17.650 \\
+									&									& 								  &						& 0.1 						& 13.100 \\
+									&									& 								  &						& 0.01 					   & 12.610 \\
+									&									& 								  &Y				   & 2 							& 18.600 \\
+									&									& 								  &						& 0.2 						& 13.200\\
+									&									& 								  &						& 0.02 					   & 12.630 \\
+									&									& 								  &Z				   & 5 							& 22.600 \\
+									&									& 								  &						& 0.5 						& 13.600\\
+									&									& 								  &						& 0.05 					   & 12.700\\
+	\end{tabular}}
+	\caption{\label{tab:banking-time-influence-asynchronous}Influence of transaction times in an asynchronous system.}
+\end{table*}\noindent
+From these tables it is clear that, in order to let this project succeed, we need to let go of the synchronous approach and focus on the asynchronous one. Another conclusion is that when the bank transaction times are relatively close to each other, the impact they have on the overall run-time is rather limited.\\
+A small remark to the results is that only requests from the "tickets available" scenario are shown, the ones for the "no tickets available" scenario are handled instantly.\\
+Table \ref{tab:banking-time-influence-asynchronous} clearly show that we can keep the total handling time for all request reasonably low by going for a combination of low bank transaction times (which need to be negotiated) and a high number of servers.
 
 \subsection{Meeting the requirements}
 The first requirement of the system is that a user should never have to wait for more than 10 minutes. To this end there should be some sort of load balancing in place for the system to handle peak-loads.\\
-In order to determine the number of servers that would be needed to satisfy this requirement we propose following:\\
-Assume $N$ tickets are being sold and that, in the worst case scenario, each user buys 1 ticket. Let us put the worst case time needed to complete a transaction at $<$insert average value$>$ ($<$insert calculation from table$>$)seconds. In the desired 10 minutes (=600 seconds) time limit one single server can then process $X = <$insert values$>$ request. This means that, worst case, $R = N-X$ tickets are left after the initial 10 minutes.
+As shown in Table \ref{tab:banking-time-influence-asynchronous}, the number of servers needed depends for the largest part on the number of available tickets and the amount of expected requests to occur at the same time. From the same data a graph can be plotted which will show that the amount of time needed to handle all incoming requests lowers exponentially with the number of servers. \\
+Since the amount of memory in the machine used to run the tests is limited, we leave the calculations as for the exact amount of servers that would be required to the reader as we provide the code in Appendix \ref{appendix:abscode}. While trying to find the answer ourselves we reached our limit simulating 10,000 requests with 100 available servers, resulting in a total request time of 6.2 seconds assuming bank transaction time of 0.5 seconds.
 
 \section{Proof of concept}
 \subsection{Design}
+To build a proof of concept for this project we decided to use the Docker framework in order to containerize our final solution. After reviewing our initial design we decided to keep all of the 
 
 \subsection{Calibration}
 
@@ -84,13 +165,260 @@ Assume $N$ tickets are being sold and that, in the worst case scenario, each use
 
 \newpage
 \newpage
-\section*{Appendix}
-\appendix
-\section{Class diagram}
+\begin{appendices}
+	\section{Class diagram}
+	
+	\section{Deployment diagram}
+	
+	\section{Sequence diagrams}
+	
+	\section{ABS code}
+	\label{appendix:abscode}
+	\begin{lstlisting}[language=json]
+		// duration(x, y) means waiting at least x miliseconds and at most y miliseconds
+		
+		module TML;
+		import * from ABS.DC;
+		
+		interface LoadBalancer {
+			Unit addWorker(Shop s);
+			Shop getWorker();
+			Unit releaseWorker(Shop s);
+		}
+		
+		class RoundRobinLoadBalancer() implements LoadBalancer {
+			List<Shop> available = Nil; 
+			List<Shop> inuse = Nil;
+			
+			Unit addWorker(Shop s){
+				available = appendright(available,s);
+			}
+			
+			Shop getWorker(){
+				await (available != Nil);
+				Shop s = head(available); 
+				available = tail(available); 
+				inuse = appendright(inuse,s);
+				return s;
+			}
+		
+			Unit releaseWorker(Shop s){
+				available = appendright(available,s); 
+				inuse = without(inuse,s);
+			}
+		
+		}
+		
+		interface User {
+			Bool register();
+			Bool authenticate();
+			Bool tickets();
+			String getName();
+			String getEmail();
+			String getCCtype();
+		}
+		
+		class User(String name, Int age, String cctype, String email, Keyvault k) implements User {
+			Bool register() {
+				await duration(10, 99/2);
+				println("Registered " + name);
+				return True;
+			}
+			
+			Bool authenticate(){
+				await duration(10, 59/2);
+				return True;
+			}
+			
+			Bool tickets(){
+				await duration(30, 99/2);
+				println("Printing tickets");
+				return True;
+			}
+			
+			String getName() {
+				k.encrypt();
+				return name;
+			}
+			
+			String getEmail() {
+				k.encrypt();
+				return email;
+			}
+			
+			String getCCtype() {
+				k.encrypt();
+				return cctype;
+			}
+		
+		}
+		
+		interface Shop {
+			Bool buyTickets(Int amount, User u, String date1, String date2);
+		}
+		
+		class Shop(Bank b, Keyvault k, Tickets t, Duration responseTime) implements Shop {
+			Bool buyTickets(Int amount, User u, String date1, String date2){
+				Bool status = True;
+				if (amount>4){
+				println("Too many tickets ordered, abort");
+				status = False;
+			}
+			
+			Bool ticket_status = t.checkAvailable(date1, date2, amount);
+				//println(toString(ticket_status));
+				if (ticket_status == True){
+					String cctype = await u!getCCtype();
+					Bool temp = k.decrypt();
+					Bool payment = await b!process(42, cctype);
+					if (!payment){
+						status = False;
+						t!releaseTickets(date1, date2, amount);
+					}
+					else{
+						println("Tickets have been successfully booked");
+					}
+				}
+				else{
+					println("No ticket available");
+					status = False;
+				}
+				println(toString(now()));
+				return status;
+			}
+		}
+		
+		interface Bank {
+			Bool process(Int price, String cctype);
+		}
+		
+		class Bank(Keyvault k) implements Bank {
+			Bool process(Int price, String cctype){
+				Bool status = True;
+				if (cctype == "visa"){
+					await duration(200, 800); 
+				}
+				else if (cctype == "maestro"){
+					await duration(500, 1500);
+				}
+				else if (cctype == "mastercard"){
+					await duration(100, 600);
+				}
+				return status;
+			}
+		}
+		
+		interface Keyvault {
+			Bool encrypt();
+			Bool decrypt();
+		}
+		
+		class Keyvault() implements Keyvault {
+			Bool encrypt(){
+				await duration(40, 50);
+				return True;
+			}
+			
+			Bool decrypt(){
+				await duration(40, 50);
+				return True;
+			}
+		}
+		
+		interface Tickets {
+			Bool checkAvailable(String date1, String date2, Int amount);
+			Bool releaseTickets(String date1, String date2, Int amount);
+			Bool addTickets(String date1, String date2, Int amount);
+		}
+		
+		class Tickets() implements Tickets{
+			Map<Pair<String, String>, Int> tickets = map[];
+			
+			Bool checkAvailable(String date1, String date2, Int amount){
+				Bool status = True;
+				Pair<String, String> period = Pair(date1, date2);
+				Int available = lookupDefault(tickets, period, 0);
+				if (amount >= available) {
+					status = False;
+				}
+				else{
+					Int temp = available;
+					available = temp-amount;
+					tickets = put(tickets, period, available);
+					status = True;
+				}
+				return status;
+			}
+			
+			Bool releaseTickets(String date1, String date2, Int amount){
+				Pair<String, String> period = Pair(date1, date2);
+				Int available = lookupDefault(tickets, period, 0);
+				Int temp = available;
+				available = temp+amount;
+				tickets = put(tickets, period, available);
+				return True;
+			}
+			
+			Bool addTickets(String date1, String date2, Int amount){
+				Pair<String, String> period = Pair(date1, date2);
+				Pair<Pair<String, String>, Int> p = Pair(period, amount);
+				tickets = insert(tickets, p);
+				return True;
+			}
+		}
+		
+		{
+			CloudProvider p = new CloudProvider("TML");
+			await p!setInstanceDescriptions(
+			map[Pair("T2_MICRO", map[Pair(Memory,1), Pair(Speed,1)]),
+			Pair("T2_SMALL", map[Pair(Memory,2), Pair(Speed,1)]),
+			Pair("T2_MEDIUM", map[Pair(Memory,4), Pair(Speed,2)]),
+			Pair("M4_LARGE", map[Pair(Memory,8), Pair(Speed,2)])]);
+			
+			DC  server1 = await p!launchInstanceNamed("T2_SMALL");
+			DC  server2 = await p!launchInstanceNamed("T2_SMALL");
+			DC  server3 = await p!launchInstanceNamed("T2_SMALL");
+			
+			DC  server4 = await p!launchInstanceNamed("M4_LARGE");
+			DC  server5 = await p!launchInstanceNamed("M4_LARGE");
+			DC  server6 = await p!launchInstanceNamed("M4_LARGE");
+			DC  server7 = await p!launchInstanceNamed("M4_LARGE");
+			
+			[DC: server4] Keyvault kv = new Keyvault();
+			[DC: server5] Bank bank = new Bank(kv);
+			[DC: server6] LoadBalancer lb = new RoundRobinLoadBalancer();
+			[DC: server7] Tickets t = new Tickets();
+			
+			Int nmbrTickets = 10000000;	// This values can be changed for testing purposes
+			t!addTickets("01-07-2020", "03-07-2020", nmbrTickets);
+			
+			Int nrWorkers = 100;
+			while(nrWorkers > 0){
+				Fut<DC> fs = p!launchInstanceNamed("M4_LARGE"); 
+				DC vm = fs.get;
+				[DC: vm] Shop shop = new Shop(bank, kv, t, Duration(1000));
+				lb.addWorker(shop); 
+				nrWorkers = nrWorkers-1;
+			}
+			
+			Int nrJobs = 10000;	// Number can be changed for testing purposes
+			println(toString(now()));
+			while(nrJobs>0){
+				Fut<Shop> s = lb!getWorker();
+				User u = new User(toString(nrJobs), 22, "mastercard", "email", kv);
+				Shop shopworker = s.get;
+				shopworker!buyTickets(4, u, "01-07-2020", "03-07-2020");
+				lb.releaseWorker(shopworker);
+				nrJobs = nrJobs - 1;
+			} 
+			
+			println(toString(now())); 
+			println("DONE");
+		}
+	\end{lstlisting}
+	
+\end{appendices}
 
-\section{Deployment diagram}
-
-\section{Sequence diagrams}
 
 
 

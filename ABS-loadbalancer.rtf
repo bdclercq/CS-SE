@@ -1,0 +1,247 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2511
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 // duration(x, y) means waiting at least x miliseconds and at most y miliseconds\
+\
+module TML;\
+import * from ABS.DC;\
+\
+interface LoadBalancer \{\
+    Unit addWorker(Shop s);\
+    Shop getWorker();\
+    Unit releaseWorker(Shop s);\
+\}\
+\
+class RoundRobinLoadBalancer() implements LoadBalancer \{\
+    List<Shop> available = Nil; \
+  	List<Shop> inuse = Nil;\
+  \
+    Unit addWorker(Shop s)\{\
+    	available = appendright(available,s);\
+    \}\
+  \
+    Shop getWorker()\{\
+        await (available != Nil);\
+        Shop s = head(available); \
+      	available = tail(available); \
+      	inuse = appendright(inuse,s);\
+        return s;\
+    \}\
+  \
+    Unit releaseWorker(Shop s)\{\
+    	available = appendright(available,s); \
+      	inuse = without(inuse,s);\
+    \}\
+\
+\}\
+\
+interface User \{\
+    Bool register();\
+  	Bool authenticate();\
+  	Bool tickets();\
+	String getName();\
+	String getEmail();\
+  	String getCCtype();\
+\}\
+\
+class User(String name, Int age, String cctype, String email, Keyvault k) implements User \{\
+    Bool register() \{\
+      await duration(10, 99/2);\
+      println("Registered " + name);\
+      return True;\
+    \}\
+  \
+  	Bool authenticate()\{\
+      await duration(10, 59/2);\
+      return True;\
+    \}\
+  \
+  	Bool tickets()\{\
+      await duration(30, 99/2);\
+      println("Printing tickets");\
+      return True;\
+    \}\
+	\
+	String getName() \{\
+      	k.encrypt();\
+		return name;\
+	\}\
+	\
+	String getEmail() \{\
+      	k.encrypt();\
+		return email;\
+	\}\
+  \
+  	String getCCtype() \{\
+      	k.encrypt();\
+		return cctype;\
+	\}\
+	\
+\}\
+\
+interface Shop \{\
+	Bool buyTickets(Int amount, User u, String date1, String date2);\
+\}\
+\
+class Shop(Bank b, Keyvault k, Tickets t, Duration responseTime) implements Shop \{\
+	Bool buyTickets(Int amount, User u, String date1, String date2)\{\
+      	Bool status = True;\
+    	if (amount>4)\{\
+          	println("Too many tickets ordered, abort");\
+        	status = False;\
+        \}\
+		Bool ticket_status = t.checkAvailable(date1, date2, amount);\
+      	//println(toString(ticket_status));\
+      	if (ticket_status == True)\{\
+          	String cctype = await u!getCCtype();\
+			Bool temp = k.decrypt();\
+          	Bool payment = await b!process(42, cctype);\
+          	if (!payment)\{\
+            	status = False;\
+				t!releaseTickets(date1, date2, amount);\
+            \}\
+          	else\{\
+            	println("Tickets have been successfully booked");\
+            \}\
+        \}\
+      	else\{\
+          	println("No ticket available");\
+			status = False;\
+		\}\
+      	println(toString(now()));\
+      	return status;\
+    \}\
+\}\
+\
+interface Bank \{\
+	Bool process(Int price, String cctype);\
+\}\
+\
+class Bank(Keyvault k) implements Bank \{\
+	Bool process(Int price, String cctype)\{\
+      	Bool status = True;\
+    	if (cctype == "visa")\{\
+        	await duration(2000, 8000); \
+        \}\
+      	else if (cctype == "maestro")\{\
+        	await duration(500, 1500);\
+        \}\
+      	else if (cctype == "mastercard")\{\
+        	await duration(1000, 6000);\
+        \}\
+      	return status;\
+    \}\
+  \
+\}\
+\
+interface Keyvault \{\
+	Bool encrypt();\
+	Bool decrypt();\
+\}\
+\
+class Keyvault() implements Keyvault \{\
+	Bool encrypt()\{\
+    	await duration(40, 50);\
+      	return True;\
+    \}\
+	Bool decrypt()\{\
+    	await duration(40, 50);\
+      	return True;\
+    \}\
+\}\
+\
+interface Tickets \{\
+	Bool checkAvailable(String date1, String date2, Int amount);\
+  	Bool releaseTickets(String date1, String date2, Int amount);\
+  	Bool addTickets(String date1, String date2, Int amount);\
+\}\
+\
+class Tickets() implements Tickets\{\
+  	Map<Pair<String, String>, Int> tickets = map[];\
+  \
+	Bool checkAvailable(String date1, String date2, Int amount)\{\
+      	Bool status = True;\
+    	Pair<String, String> period = Pair(date1, date2);\
+      	Int available = lookupDefault(tickets, period, 0);\
+        if (amount >= available) \{\
+          status = False;\
+        \}\
+        else\{\
+          Int temp = available;\
+          available = temp-amount;\
+          tickets = put(tickets, period, available);\
+          status = True;\
+        \}\
+      	//println(toString(lookupDefault(tickets, period, 0)));\
+      	return status;\
+    \}\
+  \
+  	Bool releaseTickets(String date1, String date2, Int amount)\{\
+    	Pair<String, String> period = Pair(date1, date2);\
+      	Int available = lookupDefault(tickets, period, 0);\
+        Int temp = available;\
+        available = temp+amount;\
+        tickets = put(tickets, period, available);\
+      	return True;\
+    \}\
+  \
+  	Bool addTickets(String date1, String date2, Int amount)\{\
+    	Pair<String, String> period = Pair(date1, date2);\
+      	Pair<Pair<String, String>, Int> p = Pair(period, amount);\
+      	tickets = insert(tickets, p);\
+      	return True;\
+    \}\
+\}\
+\
+\{\
+  	CloudProvider p = new CloudProvider("TML");\
+  	await p!setInstanceDescriptions(\
+        map[Pair("T2_MICRO", map[Pair(Memory,1), Pair(Speed,1)]),\
+            Pair("T2_SMALL", map[Pair(Memory,2), Pair(Speed,1)]),\
+            Pair("T2_MEDIUM", map[Pair(Memory,4), Pair(Speed,2)]),\
+            Pair("M4_LARGE", map[Pair(Memory,8), Pair(Speed,2)])]);\
+  \
+  	//DC  server1 = await p!launchInstanceNamed("T2_SMALL");\
+	DC  server2 = await p!launchInstanceNamed("T2_SMALL");\
+	DC  server3 = await p!launchInstanceNamed("T2_SMALL");\
+  \
+	DC  server4 = await p!launchInstanceNamed("M4_LARGE");\
+    DC  server5 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server6 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server7 = await p!launchInstanceNamed("M4_LARGE");\
+  \
+  	[DC: server4] Keyvault kv = new Keyvault();\
+  	[DC: server5] Bank bank = new Bank(kv);\
+	[DC: server6] LoadBalancer lb = new RoundRobinLoadBalancer();\
+	[DC: server7] Tickets t = new Tickets();\
+  \
+  	Int nmbrTickets = 24001;	// This values can be changed for testing purposes\
+	t!addTickets("01-07-2020", "03-07-2020", nmbrTickets);\
+  \
+	Shop shop = new Shop(bank, kv, t, Duration(1000));\
+  	Shop shop2 = new Shop(bank, kv, t, Duration(1000));\
+  	Shop shop3 = new Shop(bank, kv, t, Duration(1000));\
+  	Shop shop4 = new Shop(bank, kv, t, Duration(1000));\
+  \
+  	lb.addWorker(shop);\
+  	lb.addWorker(shop2);\
+  	lb.addWorker(shop3);\
+  	lb.addWorker(shop4);\
+	\
+	Int nrJobs = 10000;	// Number can be changed for testing purposes\
+  	println(toString(now()));\
+	while(nrJobs>0)\{\
+		Fut<Shop> s = lb!getWorker();\
+		User u = new User(toString(nrJobs), 22, "maestro", "email", kv);\
+      	Shop shopworker = s.get;\
+		shopworker!buyTickets(4, u, "01-07-2020", "03-07-2020");\
+		lb.releaseWorker(shopworker);\
+		nrJobs = nrJobs - 1;\
+	\} \
+	println(toString(now())); \
+  	println("DONE");\
+\}}
