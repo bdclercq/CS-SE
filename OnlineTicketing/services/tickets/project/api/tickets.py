@@ -8,8 +8,8 @@ tickets_blueprint = Blueprint('tickets', __name__, template_folder='./templates'
 
 
 @tickets_blueprint.route('/get_tickets', methods=['GET'])
-def get_users():
-    """Get all users"""
+def get_tickets():
+    """Get all tickets"""
     response_object = {
         'status': 'success',
         'data': {

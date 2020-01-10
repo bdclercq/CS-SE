@@ -9,6 +9,8 @@
 \usepackage{listings}
 \usepackage{xcolor}
 
+\graphicspath{ {./diagrams/} }
+
 \definecolor{eclipseStrings}{RGB}{42,0.0,255}
 \definecolor{eclipseKeywords}{RGB}{127,0,85}
 \colorlet{numb}{magenta!60!black}
@@ -84,19 +86,20 @@ When running the system with different configurations we the results shown in Ta
 \begin{table*}[]
 	\begin{tabular}{lll}
 		Bank				& Transaction time & Total request time\\
-								& in seconds		   & in seconds	\\
+		& in seconds		   & in seconds	\\
 		X					 & 1 						  & 6.100 \\
-								& 0.1 						& 0.700 \\
-								& 0.01 					   & 0.160 \\
+		& 0.1 						& 0.700 \\
+		& 0.01 					   & 0.160 \\
 		Y				   & 2 							& 8.100 \\
-								& 0.2 						&  0.900\\
-								& 0.02 					   & 0.180 \\
+		& 0.2 						&  0.900\\
+		& 0.02 					   & 0.180 \\
 		Z				   & 5 							& 15.100 \\
-								& 0.5 						&  1.600\\
-								& 0.05 					   & 0.250
+		& 0.5 						&  1.600\\
+		& 0.05 					   & 0.250
 	\end{tabular}
 	\caption{\label{tab:banking-time-influence-synchronous}Influence of transaction times in a synchronous system (maximum 200 requests).}
-\end{table*}\noindent
+\end{table*}
+\noindent
 
 \begin{table*}[t]
 	\scalebox{0.9}{%
@@ -149,13 +152,26 @@ Table \ref{tab:banking-time-influence-asynchronous} clearly show that we can kee
 \subsection{Meeting the requirements}
 The first requirement of the system is that a user should never have to wait for more than 10 minutes. To this end there should be some sort of load balancing in place for the system to handle peak-loads.\\
 As shown in Table \ref{tab:banking-time-influence-asynchronous}, the number of servers needed depends for the largest part on the number of available tickets and the amount of expected requests to occur at the same time. From the same data a graph can be plotted which will show that the amount of time needed to handle all incoming requests lowers exponentially with the number of servers. \\
-Since the amount of memory in the machine used to run the tests is limited, we leave the calculations as for the exact amount of servers that would be required to the reader as we provide the code in Appendix \ref{appendix:abscode}. While trying to find the answer ourselves we reached our limit simulating 10,000 requests with 100 available servers, resulting in a total request time of 6.2 seconds assuming bank transaction time of 0.5 seconds.
+Since the amount of memory in the machine used to run the tests is limited, we leave the calculations as for the exact amount of servers that would be required to the reader as we provide the code in Appendix \ref{appendix:abscode}. While trying to find the answer ourselves we reached our limit simulating 10,000 requests with 100 available servers, resulting in a total request time of 6.2 seconds assuming bank transaction time of 0.5 seconds.\\
+\\
+The second requirement of the system is that all communication should be encrypted. To this end we propose to put a copy of the central keyvault in each of the services. This is possible because of the fact that all users should have registered a couple of weeks in advance. By doing so we can ensure that encryption and decryption both have an insignificant impact on the total request time as this would eliminate sending various requests to the central keyvault service.\\
+\\
+The final requirement is that a user's balance should be checked to verify that he/she has sufficient funds. In case the user pays using a credit card, this requirement is useless. People often decide to pay using a credit card when the balance of their account shouldn't be considered, it may be the case that they decide to buy tickets at a time when they don't have sufficient funds yet. The credit card then, as the name suggest, provides the necessary credit. How and when this debt between the user and credit card company is settled doesn't belong to the scope of this project.\\
+In the case a user decides to pay using a debit card, this credit check is implicitly executed and therefore already accounted for in the simulation. 
 
 \section{Proof of concept}
 \subsection{Design}
-To build a proof of concept for this project we decided to use the Docker framework in order to containerize our final solution. After reviewing our initial design we decided to keep all of the 
+To build a proof of concept for this project we decided to use the Docker framework in order to containerize our final solution. After reviewing our initial design we decided to keep all of the elements:
+\begin{itemize}
+	\item a Users service that will be responsible for the registration and eventual authentication of users,
+	\item an Interface service which will act as the interface between the user and the ticketing service,
+	\item a Banking service to simulate the times a user would have to wait while his or her payment is being executed,
+	\item a Tickets service which acts as database to keep track of the amount of tickets that are still available.
+\end{itemize}
+Again we assume that each of the individual services has their own copy of a central keyvault that has been filled during the registration period. In order to achieve the required load balancing the application can be launched using Kubernetes.\\
 
 \subsection{Calibration}
+We decided to calibrate our system using a random bank transaction time of maximum 5 seconds, all other timing values are now implicit when using the actual system.
 
 \subsection{Meeting the requirements}
 
@@ -164,14 +180,30 @@ To build a proof of concept for this project we decided to use the Docker framew
 \section{Next steps}
 
 \newpage
+\clearpage
 \newpage
 \begin{appendices}
 	\section{Class diagram}
+	\begin{figure}[h]
+		\includegraphics*[scale=0.7]{class-diagram.png}
+	\end{figure}
+
+	\clearpage
+	\newpage
 	
 	\section{Deployment diagram}
+	Generated by running following command in the folder containing the docker yml file: \\
+	\texttt{docker run --rm -it --name dcv -v $``$(pwd):/input$"$ pmsipilot/docker-compose-viz}\\
+	\begin{figure}[h]
+		\includegraphics*[scale=0.3]{docker-compose.png}
+	\end{figure}
 	
+	\clearpage
+	\newpage
 	\section{Sequence diagrams}
 	
+	\clearpage
+	\newpage
 	\section{ABS code}
 	\label{appendix:abscode}
 	\begin{lstlisting}[language=json]

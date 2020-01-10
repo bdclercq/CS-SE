@@ -66,7 +66,7 @@ def place_order():
         status = requests.get("http://tickets:5004/check_available/{0}/{1}/{2}".format(amount, dfrom, dto)).json()
         if status['status'] == 'success':
             creditcard = requests.get("http://users:5001/get_creditcard/{0},{1}".format(mail, pwd)).json()['data']['creditcard']
-            bank_status = requests.get("http://banking:5002/pay_tickets/{0}/{1}".format(amount, creditcard)).json()
+            bank_status = requests.get("http://banking:5002/pay_tickets/{0}/{1}/{2}".format(amount, creditcard, mail)).json()
             if bank_status['status'] == 'success':
                 tickets = requests.get("http://tickets:5004/get_tickets")
             else:

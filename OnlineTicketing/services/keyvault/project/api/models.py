@@ -1,20 +1,34 @@
 from sqlalchemy.sql import func
 
 from project import db
+from sqlalchemy.dialects.postgresql import HSTORE
+from sqlalchemy.ext.mutable import MutableDict
 
 
 class Keyvault(db.Model):
+
     __tablename__ = 'keyvault'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    encrypted = db.Column(db.String(128), nullable=False)
-    decrypted = db.Column(db.String(128), nullable=False)
+    key = db.Column(MutableDict.as_mutable(HSTORE))
 
-    def __init__(self, encrypted, decrypted):
-        self.encrypted = encrypted
-        self.decrypted = decrypted
+    def __init__(self, user, key):
+        self.key = {user: key}
 
     def to_json(self):
         return {
-            'encrypted': self.encrypted,
-            'decrypted': self.decrypted
+            'key': self.key
         }
+
+    def get_key(self, user):
+        '''This function should find the key for the given user in order to encrypt/decrypt messages.'''
+        pass
+
+    def encrypt(self, mess, user):
+        key = self.get_key(user)
+        '''Next the message should be encrypted'''
+        pass
+
+    def decrypt(self, mess, user):
+        key = self.get_key(user)
+        '''Next the message should be decrypted'''
+        pass

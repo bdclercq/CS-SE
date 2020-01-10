@@ -6,5 +6,6 @@ class Interface(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     initialized = False
 
-    def __init__(self):
+    def __init__(self, kv=None):
         self.initialized = True
+        self.kv = kv

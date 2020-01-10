@@ -106,5 +106,4 @@ services:
     depends_on:
       - users
       - banking
-      - keyvault
       - tickets

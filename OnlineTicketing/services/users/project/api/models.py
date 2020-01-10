@@ -8,10 +8,11 @@ class User(db.Model):
     password = db.Column(db.String(50), nullable=False)
     creditcard = db.Column(db.String(50), nullable=False)
 
-    def __init__(self, email, password, cc):
+    def __init__(self, email, password, cc, kv=None):
         self.email = email
         self.password = password
         self.creditcard = cc
+        self.kv = kv
 
 
     def to_json(self):

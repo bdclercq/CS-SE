@@ -17,13 +17,13 @@ def get_all():
     return jsonify(response_object), 200
 
 
-@banking_blueprint.route('/pay_tickets/<amount>/<credit_card>', methods=['GET'])
-def pay_tickets(amount, credit_card):
+@banking_blueprint.route('/pay_tickets/<amount>/<credit_card>/<user>', methods=['GET'])
+def pay_tickets(amount, credit_card, user):
     response_object = {
         'status': 'success',
         'data': 'Transaction succeeded'
     }
-    transactiontime = random.randint(1, 5)/100.0
+    transactiontime = random.randint(1, 50)/10.0
     time.sleep(transactiontime)
     rand = random.randint(0, 100)
     if rand%5:
