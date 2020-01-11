@@ -1,9 +1,18 @@
-from flask import Blueprint, jsonify, request, render_template, redirect
+from flask import Blueprint, jsonify, request, render_template, redirect, g
 import requests
 import json
+import time
 from datetime import datetime
 
 UI_blueprint = Blueprint('interface', __name__, template_folder='./templates')
+
+
+@UI_blueprint.before_request
+def before_request():
+    g.request_start_time = time.time()
+    g.request_time = lambda: "%.5fs" % (time.time() - g.request_start_time)
+
+################################################################
 
 
 @UI_blueprint.route('/', methods=['GET', 'POST'])

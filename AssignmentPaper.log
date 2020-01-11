@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2019.7.18)  10 JAN 2020 21:35
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2019.7.18)  11 JAN 2020 14:46
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -324,79 +324,84 @@ File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 54.
-
-
-LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 86.
-
-[1{/usr/local/texlive/2019/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
+ [1{/usr/local/texlive/2019/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
 
 ]
-Underfull \hbox (badness 1783) in paragraph at lines 153--161
+
+LaTeX Warning: No positions in optional float specifier.
+               Default added (so using `tbp') on input line 87.
+
+
+Underfull \hbox (badness 1783) in paragraph at lines 155--162
 \OT1/cmr/m/n/10 avail-able tick-ets and the amount of ex-pected
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 153--161
+Underfull \hbox (badness 10000) in paragraph at lines 155--162
 
  []
 
 
-Underfull \hbox (badness 1917) in paragraph at lines 153--161
+Underfull \hbox (badness 1917) in paragraph at lines 155--162
 \OT1/cmr/m/n/10 re-quest time as this would elim-i-nate send-ing
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 153--161
+Underfull \hbox (badness 10000) in paragraph at lines 155--162
 
  []
 
 
-Underfull \hbox (badness 1189) in paragraph at lines 171--172
+Underfull \hbox (badness 1874) in paragraph at lines 155--162
+\OT1/cmr/m/n/10 should be checked to ver-ify that he/she has
+ []
+
+
+Underfull \hbox (badness 1189) in paragraph at lines 172--173
 \OT1/cmr/m/n/10 Again we as-sume that each of the in-di-vid-ual
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 171--172
+Underfull \hbox (badness 10000) in paragraph at lines 172--173
 
  []
 
-[2] [3
-
-]
+[2] [3]
 <./diagrams/class-diagram.png, id=17, 632.3625pt x 510.4671pt>
 File: ./diagrams/class-diagram.png Graphic file (type png)
 <use ./diagrams/class-diagram.png>
-Package pdftex.def Info: ./diagrams/class-diagram.png  used on input line 188.
+Package pdftex.def Info: ./diagrams/class-diagram.png  used on input line 189.
 (pdftex.def)             Requested size: 442.65074pt x 357.32452pt.
 
-Overfull \hbox (221.1668pt too wide) in paragraph at lines 188--189
+Overfull \hbox (221.1668pt too wide) in paragraph at lines 189--190
 [][] 
  []
 
-[4
 
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[4
 
  <./diagrams/class-diagram.png>]
 <./diagrams/docker-compose.png, id=23, 1504.62125pt x 626.34pt>
 File: ./diagrams/docker-compose.png Graphic file (type png)
 <use ./diagrams/docker-compose.png>
-Package pdftex.def Info: ./diagrams/docker-compose.png  used on input line 198.
+Package pdftex.def Info: ./diagrams/docker-compose.png  used on input line 199.
 
 (pdftex.def)             Requested size: 451.38986pt x 187.90344pt.
 
-Overfull \hbox (229.90591pt too wide) in paragraph at lines 198--199
+Overfull \hbox (229.90591pt too wide) in paragraph at lines 199--200
 [][] 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 195--200
+Underfull \hbox (badness 10000) in paragraph at lines 196--201
 \OT1/cmtt/m/n/10 docker run --rm -it --name
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 195--200
+Underfull \hbox (badness 10000) in paragraph at lines 196--201
 \OT1/cmtt/m/n/10 dcv -v $\OT1/cmr/m/n/10 \$\OT1/cmtt/m/n/10 (pwd):/input$\OT1/c
 mr/m/n/10 "$
  []
@@ -419,11 +424,11 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Here is how much of TeX's memory you used:
  5083 strings out of 492616
  67700 string characters out of 6129481
- 611461 words of memory out of 5000000
+ 611453 words of memory out of 5000000
  8930 multiletter control sequences out of 15000+600000
  12137 words of font info for 48 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 41i,9n,37p,608b,1711s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,9n,37p,711b,1711s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/local/texlive/2019/texmf-dist/fonts/type1/publ
 ic/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2019/texmf-dist/fonts/type1/publi
 c/amsfonts/cm/cmr10.pfb></usr/local/texlive/2019/texmf-dist/fonts/type1/public/
@@ -432,7 +437,7 @@ sfonts/cm/cmr17.pfb></usr/local/texlive/2019/texmf-dist/fonts/type1/public/amsf
 onts/cm/cmsy10.pfb></usr/local/texlive/2019/texmf-dist/fonts/type1/public/amsfo
 nts/cm/cmtt10.pfb></usr/local/texlive/2019/texmf-dist/fonts/type1/public/amsfon
 ts/cm/cmtt8.pfb>
-Output written on AssignmentPaper.pdf (8 pages, 224513 bytes).
+Output written on AssignmentPaper.pdf (8 pages, 225537 bytes).
 PDF statistics:
  67 PDF objects out of 1000 (max. 8388607)
  44 compressed objects within 1 object stream
