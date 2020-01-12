@@ -1,0 +1,365 @@
+module TML;
+import * from ABS.DC;
+
+interface Client {
+  	Unit run();
+}
+
+class ClosedClient (Shop ep, Int cycle, Rat cost, Int nbrOfJobs) implements Client {
+  Int jobcount = 0;
+  Unit run() {
+    await duration(cycle, cycle);
+    Bool result = await ep!invokeService(cost); jobcount = jobcount + 1;
+    if (jobcount < nbrOfJobs) { this!run(); }
+  }
+}
+
+class OpenClient (Shop ep, Int cycle, Rat cost, Int nbrOfJobs) implements Client {
+  Int jobcount = 0;
+  Unit run() {
+    Fut<Bool> fresult = ep!invokeService(cost); jobcount = jobcount + 1;
+    await duration(cycle, cycle);
+    if (jobcount < nbrOfJobs) { this!run(); } await fresult?; Bool result = fresult.get;
+  }
+}
+
+interface Worker {
+	Bool process(Rat taskCost, Time started, Duration deadline);
+}
+
+class WorkerObject() implements Worker {
+    Bool process(Rat taskCost, Time started, Duration deadline) {
+		[Cost: taskCost] skip;
+		Duration remainingTime = subtractFromDuration(deadline, timeDifference(now(),started));
+		await duration(max(0, taskCost-10), taskCost+10);
+		await duration(10, 80);
+		Bool success = True;
+		return success;
+    }
+}
+
+interface LoadBalancer {
+    Unit addWorker(Worker w);
+    Worker getWorker();
+    Unit releaseWorker(Worker w);
+    Worker firingWorker();
+    Int getNbrAvailableW();
+    Int getNbrInuseW();
+}
+
+class RoundRobinLoadBalancer() implements LoadBalancer {
+    List<Worker> available = Nil; 
+  	List<Worker> inuse = Nil;
+  
+    Unit addWorker(Worker w){
+    	available = appendright(available,w);
+    }
+  
+    Worker getWorker(){
+        await (available != Nil);
+        Worker w = head(available); available = tail(available); inuse = appendright(inuse,w);
+        return w;
+    }
+  
+    Unit releaseWorker(Worker w){
+    	available = appendright(available,w); inuse = without(inuse,w);
+    }
+  
+    Worker firingWorker(){
+        await (available != Nil);
+        Worker w = head(reverse(available)); available = without(available,w);
+        return w;
+    }
+  
+  	Int getNbrAvailableW(){
+    	return length(available);
+    }	
+  
+  	Int getNbrInuseW(){
+    	return length(inuse);
+    }
+
+}
+
+interface User {
+    Bool register();
+  	Bool authenticate();
+  	Bool tickets();
+	String getName();
+	String getEmail();
+  	String getCC();
+  	String getCCtype();
+}
+
+class User(String name, Int age, String cc, String cctype, String email, Keyvault k) implements User {
+    Bool register() {
+      [Cost: 2, Deadline: Duration(50)]
+      await duration(10, 99/2);
+      println("Registered " + name);
+      return True;
+    }
+  
+  	Bool authenticate(){
+      [Cost: 1, Deadline: Duration(30)]
+      await duration(10, 59/2);
+      return True;
+    }
+  
+  	Bool tickets(){
+      [Cost: 2, Deadline: Duration(50)]
+      await duration(30, 99/2);
+      println("Printing tickets");
+      return True;
+    }
+	
+	String getName() {
+      	k.encrypt(name);
+		return name;
+	}
+	
+	String getEmail() {
+      	k.encrypt(email);
+		return email;
+	}
+  
+  	String getCC() {
+      	k.encrypt(cc);
+		return cc;
+	}
+  
+  	String getCCtype() {
+      	k.encrypt(cctype);
+		return cctype;
+	}
+	
+}
+
+interface Shop {
+	Bool buyTickets(Int amount, User u);
+  	Bool invokeService(Rat cost);
+}
+
+class Shop(Int nmbrtickets, Int ticketprice, Bank b, Keyvault k, LoadBalancer lb, Duration responseTime) implements Shop {
+	Bool buyTickets(Int amount, User u){
+      	Bool status = True;
+      	Int tickets = this.nmbrtickets;
+    	if (amount>4){
+          	println("Too many tickets ordered, abort");
+        	status = False;
+        }
+      	if (tickets < amount){
+          	println("Not enough tickets left, abort");
+        	status = False;
+        }
+      	if (tickets >= amount){
+        	String cc = await u!getCC();
+          	String cctype = await u!getCCtype();
+          	String ccdecr = k.decrypt(cc);
+          	String cctd = k.decrypt(cctype);
+          	Bool payment = await b!process(ccdecr, this.ticketprice, cctd);
+          	if (!payment){
+            	status = False;
+            }
+          	else{
+              	this.nmbrtickets = this.nmbrtickets - amount;
+              	println(toString(this.nmbrtickets));
+            	println("Tickets have been successfully booked");
+            }
+        }
+      	return status;
+    }
+  
+  	Bool invokeService(Rat cost){
+		Time started = now();
+		Worker w = await lb!getWorker();
+		Bool success = await w!process(cost, started, responseTime);
+		await lb!releaseWorker(w);
+      	return True;
+    }
+}
+
+interface Bank {
+	Bool process(String cc, Int price, String cctype);
+}
+
+class Bank(Keyvault k) implements Bank {
+	Bool process(String cc, Int price, String cctype){
+      	Bool status = True;
+    	if (cctype == "visa"){
+        	await duration(20, 80);
+          	String creditcard = k.decrypt(cc);
+        }
+      	else if (cctype == "maestro"){
+        	await duration(50, 150);
+          	String creditcard = k.decrypt(cc);
+        }
+      	else if (cctype == "mastercard"){
+        	await duration(10, 60);
+          	String creditcard = k.decrypt(cc);
+        }
+      	return status;
+    }
+  
+}
+
+interface Keyvault {
+	String encrypt(String key);
+	String decrypt(String key);
+}
+
+class Keyvault() implements Keyvault {
+	String encrypt(String key){
+    	await duration(40, 50);
+      	return key;
+    }
+	String decrypt(String key){
+    	await duration(40, 50);
+      	return key;
+    }
+}
+
+
+{
+  	CloudProvider p = new CloudProvider("TML");
+  	await p!setInstanceDescriptions(
+        map[Pair("T2_MICRO", map[Pair(Memory,1), Pair(Speed,1)]),
+            Pair("T2_SMALL", map[Pair(Memory,2), Pair(Speed,1)]),
+            Pair("T2_MEDIUM", map[Pair(Memory,4), Pair(Speed,2)]),
+            Pair("M4_LARGE", map[Pair(Memory,8), Pair(Speed,2)])]);
+  
+  	//DC  server1 = await p!launchInstanceNamed("T2_SMALL");
+	DC  server2 = await p!launchInstanceNamed("T2_SMALL");
+	DC  server3 = await p!launchInstanceNamed("T2_SMALL");
+	DC  server4 = await p!launchInstanceNamed("M4_LARGE");
+    DC  server5 = await p!launchInstanceNamed("M4_LARGE");
+  	DC  server6 = await p!launchInstanceNamed("M4_LARGE");
+  	DC  server7 = await p!launchInstanceNamed("M4_LARGE");
+  	DC  server8 = await p!launchInstanceNamed("M4_LARGE");
+  
+  	[DC: server7] Keyvault kv = new Keyvault();
+  	[DC: server5] Bank bank = new Bank(kv);
+	[DC: server8] LoadBalancer lb = new RoundRobinLoadBalancer();
+	[DC: server6] Shop shop = new Shop(20, 69, bank, kv, lb, Duration(1000));
+  	
+	[DC: server2] User u1 = new User("Beau De Clercq", 24, "BE64xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u2 = new User("Mitchel Pyl", 24, "BE64xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server4] User u3 = new User("Wannes Marynen", 24, "BE56xxxxxxxxxxxx", "maestro", "email", kv);
+  	[DC: server2] User u4 = new User("Lander", 23, "BE56xxxxxxxxxxxx", "maestro", "email", kv);
+  	[DC: server3] User u5 = new User("Randy", 23, "BE56xxxxxxxxxxxx", "mastercard", "email", kv);
+  	[DC: server4] User u6 = new User("Ben", 23, "BE64xxxxxxxxxxxx", "mastercard", "email", kv);
+  	[DC: server2] User u7 = new User("Tristan", 24, "BE32xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u8 = new User("Sten", 24, "BE3264xxxxxxxxxx", "maestro", "email", kv);
+  	[DC: server4] User u9 = new User("Q", 26, "BE3256xxxxxxxxxx", "mastercard", "email", kv);
+  	[DC: server2] User u10 = new User("Ceder", 24, "BE56xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server2] User u11 = new User("Tim", 24, "BE56xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server2] User u12 = new User("Niels", 24, "BE56xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server2] User u13 = new User("Brent", 26, "BE64xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server2] User u14 = new User("Jitse", 26, "BE32xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server2] User u15 = new User("Stephen", 26, "BE32xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server2] User u16 = new User("Len", 30, "BE32xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server2] User u17 = new User("Steven", 32, "BE64xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server2] User u18 = new User("Willem", 33, "BE36xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server2] User u19 = new User("Luna", 24, "BE32xxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server2] User u20 = new User("Federico", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u21 = new User("Sam", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u22 = new User("Michael", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u23 = new User("Cedric", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u24 = new User("Lorin", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u25 = new User("Stijn", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u26 = new User("Jasper", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u27 = new User("Dorien", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u28 = new User("Eline", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u29 = new User("Senne", 22, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server3] User u30 = new User("Pieter", 25, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server4] User u31 = new User("Lars", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server4] User u32 = new User("Igor", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server4] User u33 = new User("Stan", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server4] User u34 = new User("Lucas", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server4] User u35 = new User("Iscander", 24, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server4] User u36 = new User("Benny", 36, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server4] User u37 = new User("Hans", 54, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server4] User u38 = new User("Els", 59, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server4] User u39 = new User("Annie", 64, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  	[DC: server4] User u40 = new User("Toon", 38, "BExxxxxxxxxxxxxx", "visa", "email", kv);
+  
+    Fut<Bool> f1 = u1!register();
+    Fut<Bool> f2 = u2!register();
+    Fut<Bool> f3 = u3!register();
+    Fut<Bool> f4 = u4!register();
+    Fut<Bool> f5 = u5!register();
+    Fut<Bool> f6 = u6!register();
+    Fut<Bool> f7 = u7!register();
+    Fut<Bool> f8 = u8!register();
+    Fut<Bool> f9 = u9!register();
+    Fut<Bool> f10 = u10!register();
+    Fut<Bool> f11 = u11!register();
+    Fut<Bool> f12 = u12!register();
+    Fut<Bool> f13 = u13!register();
+    Fut<Bool> f14 = u14!register();
+    Fut<Bool> f15 = u15!register();
+    Fut<Bool> f16 = u16!register();
+    Fut<Bool> f17 = u17!register();
+    Fut<Bool> f18 = u18!register();
+    Fut<Bool> f19 = u19!register();
+    Fut<Bool> f20 = u20!register();
+    Fut<Bool> f21 = u21!register();
+    Fut<Bool> f22 = u22!register();
+    Fut<Bool> f23 = u23!register();
+    Fut<Bool> f24 = u24!register();
+    Fut<Bool> f25 = u25!register();
+    Fut<Bool> f26 = u26!register();
+    Fut<Bool> f27 = u27!register();
+    Fut<Bool> f28 = u28!register();
+    Fut<Bool> f29 = u29!register();
+    Fut<Bool> f30 = u30!register();
+    Fut<Bool> f31 = u31!register();
+    Fut<Bool> f32 = u32!register();
+    Fut<Bool> f33 = u33!register();
+    Fut<Bool> f34 = u34!register();
+    Fut<Bool> f35 = u35!register();
+    Fut<Bool> f36 = u36!register();
+    Fut<Bool> f37 = u37!register();
+    Fut<Bool> f38 = u38!register();
+    Fut<Bool> f39 = u39!register();
+    Fut<Bool> f40 = u40!register();
+  
+  	String name = "";
+  	await f1?;
+	name = u1.getName();
+  	println(name);
+  	await f9?;
+  	name = u9.getName();
+  	println(name);
+  	await f8?;
+  	name = u8.getName();
+  	println(name);
+  	await f29?;
+  	name = u29.getName();
+  	println(name);
+  
+  	Bool s1 = shop.buyTickets(5, u1);
+  	Bool s2 = shop.buyTickets(4, u2);
+  	Bool s3 = shop.buyTickets(4, u3);
+  	Bool s4 = shop.buyTickets(4, u4);
+  	Bool s5 = shop.buyTickets(4, u5);
+  	Bool s6 = shop.buyTickets(4, u6);
+  	Bool s7 = shop.buyTickets(4, u7);
+  	Bool s8 = shop.buyTickets(4, u8);
+  
+  	Int nClosedClients = 30;
+  	Int nOpenClients = 80;
+  	Int taskCost = 20;
+  	Int nbrOfJobs = 10;
+  	Int nClts = 0;
+  
+  	await duration(50,50); nClts = nClosedClients;
+    while (nClts > 0) { new ClosedClient(shop, 5,taskCost, nbrOfJobs); nClts = nClts - 1;}
+    await duration(50,50); nClts = nOpenClients;
+    while (nClts > 0) { new OpenClient(shop, 1, taskCost, nbrOfJobs); nClts = nClts - 1;}
+    await duration(50,50); nClts = nClosedClients;
+    while (nClts > 0) { new ClosedClient(shop, 5,taskCost, nbrOfJobs); nClts = nClts - 1;}
+    await duration(50,50); nClts = nOpenClients;
+    while (nClts > 0) { new OpenClient(shop, 1, taskCost, nbrOfJobs); nClts = nClts - 1;}
+      
+  	println("DONE");
+}

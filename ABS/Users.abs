@@ -1,0 +1,529 @@
+module TML;
+import * from ABS.DC;
+
+interface User {
+    Bool register();
+  	Bool getCredentials();
+  	Bool authenticate();
+  	Bool tickets();
+	String getName();
+	String getEmail();
+  	String getCC();
+  	String getCCtype();
+}
+
+interface Ticket {
+	Bool printTicket();
+	Bool markBooked();
+  	Bool bookTicket(Bank b, User u);
+	String checkReservedBy();
+}
+
+interface Shop {
+	Ticket getTicketFor(User u);
+}
+
+interface Bank {
+	Bool process(String cc, Int price, String cctype);
+}
+
+interface Keyvault {
+	String encrypt(String key);
+	String decrypt(String key);
+}
+
+class User(String name, Int age, String cc, String cctype, String email) implements User {
+    Bool register() {
+      [Cost: 2, Deadline: Duration(50)]
+      await duration(10, 99/2);
+      println("Registered " + name);
+      return True;
+    }
+  
+  	Bool getCredentials(){
+      [Cost: 4, Deadline: Duration(30)]
+      await duration(10, 59/2);
+      println(name + toString(age) + cc);
+      return True;
+    }
+  
+  	Bool authenticate(){
+      [Cost: 1, Deadline: Duration(30)]
+      await duration(10, 59/2);
+      return True;
+    }
+  
+  	Bool tickets(){
+      [Cost: 2, Deadline: Duration(50)]
+      await duration(30, 99/2);
+      println("Printing tickets");
+      return True;
+    }
+	
+	String getName() {
+		return name;
+	}
+	
+	String getEmail() {
+		return email;
+	}
+  
+  	String getCC() {
+		return cc;
+	}
+  
+  	String getCCtype() {
+		return cctype;
+	}
+	
+}
+
+class Ticket(Int id, String period, Int price, Bool booked, String reservedBy, Bool busy) implements Ticket {
+	Bool printTicket(){
+		[Cost: 2, Deadline: Duration(50)]
+      	await duration(30, 99/2);
+		if (this.booked==True){ 
+          println("Ticket for " + reservedBy + "with ID" + toString(id) + "and period " + period);
+        }
+      	return this.booked;
+		
+	}
+	
+	Bool markBooked(){
+		[Cost: 2, Deadline: Duration(1)]
+        Bool status = True;
+		if (this.booked==True){ 
+          status=False;
+        } else{ 
+          this.booked = True;
+        }
+      	return status;
+	}
+  
+  	Bool bookTicket(Bank b, User u){
+      	[Cost: 1, Deadline: Duration(1)]
+      	Bool status = True;
+      	Bool auth = await u!authenticate();
+      	if (this.busy == False){
+        	this.busy==True;
+          	String cc = await u!getCC();
+          	String cctype = await u!getCCtype();
+          	Bool payment = await b!process(cc, this.price, cctype);
+          	if (payment==True){
+            	this.reservedBy = await u!getEmail();
+              	this.booked = True;
+            }
+          	else {
+            	this.busy = False;
+              	status = False;
+            }
+        }
+      	else {
+        	status = False;
+        }
+      	return status;
+    }
+	
+	String checkReservedBy(){
+		return this.reservedBy;
+	}
+}
+
+class Shop(List<Ticket> tickets) implements Shop {
+	Ticket getTicketFor(User u){
+      	Ticket t = new Ticket(0,"",0,False,"",False);
+		foreach (ticket in tickets){
+          	String reservedBy = await ticket!checkReservedBy();
+          	String email = await u!getEmail();
+			if (reservedBy == email){
+				t = ticket;
+			}
+		}
+		return t;
+	}
+}
+
+class Bank() implements Bank {
+	Bool process(String cc, Int price, String cctype){
+      	Bool status = True;
+    	if (cctype == "visa"){
+        	await duration(20, 100);
+        }
+      	else if (cctype == "maestro"){
+        	await duration(20, 100);
+        }
+      	else if (cctype == "mastercard"){
+        	await duration(20, 100);
+        }
+      	return status;
+    }
+  
+}
+
+{
+  	CloudProvider p = new CloudProvider("TML");
+  	await p!setInstanceDescriptions(
+        map[Pair("T2_MICRO", map[Pair(Memory,1), Pair(Speed,1)]),
+            Pair("T2_SMALL", map[Pair(Memory,2), Pair(Speed,1)]),
+            Pair("T2_MEDIUM", map[Pair(Memory,4), Pair(Speed,2)]),
+            Pair("M4_LARGE", map[Pair(Memory,8), Pair(Speed,2)])]);
+  
+  	//DC  server1 = await p!launchInstanceNamed("T2_SMALL");
+	DC  server2 = await p!launchInstanceNamed("T2_SMALL");
+	DC  server3 = await p!launchInstanceNamed("T2_SMALL");
+	DC  server4 = await p!launchInstanceNamed("M4_LARGE");
+    DC  server5 = await p!launchInstanceNamed("M4_LARGE");
+  	DC  server6 = await p!launchInstanceNamed("M4_LARGE");
+	
+	List<Ticket> tickets = list[];
+    Ticket t1  = new Ticket( 1 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t2  = new Ticket( 2 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t3  = new Ticket( 3 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t4  = new Ticket( 4 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t5  = new Ticket( 5 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t6  = new Ticket( 6 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t7  = new Ticket( 7 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t8  = new Ticket( 8 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t9  = new Ticket( 9 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t10  = new Ticket( 10 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t11  = new Ticket( 11 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t12  = new Ticket( 12 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t13  = new Ticket( 13 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t14  = new Ticket( 14 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t15  = new Ticket( 15 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t16  = new Ticket( 16 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t17  = new Ticket( 17 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t18  = new Ticket( 18 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t19  = new Ticket( 19 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t20  = new Ticket( 20 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t21  = new Ticket( 21 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t22  = new Ticket( 22 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t23  = new Ticket( 23 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t24  = new Ticket( 24 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t25  = new Ticket( 25 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t26  = new Ticket( 26 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t27  = new Ticket( 27 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t28  = new Ticket( 28 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t29  = new Ticket( 29 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t30  = new Ticket( 30 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t31  = new Ticket( 31 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t32  = new Ticket( 32 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t33  = new Ticket( 33 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t34  = new Ticket( 34 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t35  = new Ticket( 35 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t36  = new Ticket( 36 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t37  = new Ticket( 37 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t38  = new Ticket( 38 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t39  = new Ticket( 39 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t40  = new Ticket( 40 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t41  = new Ticket( 41 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t42  = new Ticket( 42 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t43  = new Ticket( 43 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t44  = new Ticket( 44 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t45  = new Ticket( 45 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t46  = new Ticket( 46 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t47  = new Ticket( 47 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t48  = new Ticket( 48 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t49  = new Ticket( 49 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t50  = new Ticket( 50 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t51  = new Ticket( 51 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t52  = new Ticket( 52 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t53  = new Ticket( 53 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t54  = new Ticket( 54 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t55  = new Ticket( 55 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t56  = new Ticket( 56 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t57  = new Ticket( 57 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t58  = new Ticket( 58 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t59  = new Ticket( 59 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t60  = new Ticket( 60 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t61  = new Ticket( 61 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t62  = new Ticket( 62 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t63  = new Ticket( 63 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t64  = new Ticket( 64 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t65  = new Ticket( 65 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t66  = new Ticket( 66 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t67  = new Ticket( 67 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t68  = new Ticket( 68 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t69  = new Ticket( 69 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t70  = new Ticket( 70 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t71  = new Ticket( 71 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t72  = new Ticket( 72 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t73  = new Ticket( 73 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t74  = new Ticket( 74 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t75  = new Ticket( 75 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t76  = new Ticket( 76 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t77  = new Ticket( 77 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t78  = new Ticket( 78 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t79  = new Ticket( 79 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t80  = new Ticket( 80 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t81  = new Ticket( 81 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t82  = new Ticket( 82 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t83  = new Ticket( 83 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t84  = new Ticket( 84 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t85  = new Ticket( 85 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t86  = new Ticket( 86 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t87  = new Ticket( 87 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t88  = new Ticket( 88 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t89  = new Ticket( 89 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t90  = new Ticket( 90 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t91  = new Ticket( 91 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t92  = new Ticket( 92 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t93  = new Ticket( 93 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t94  = new Ticket( 94 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t95  = new Ticket( 95 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t96  = new Ticket( 96 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t97  = new Ticket( 97 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t98  = new Ticket( 98 ,"20-8-2020:21-8-2020", 69, False, "", False);
+    Ticket t99  = new Ticket( 99 ,"20-8-2020:21-8-2020", 69, False, "", False);
+  
+    tickets=appendright(tickets, t1 );
+    tickets=appendright(tickets, t2 );
+    tickets=appendright(tickets, t3 );
+    tickets=appendright(tickets, t4 );
+    tickets=appendright(tickets, t5 );
+    tickets=appendright(tickets, t6 );
+    tickets=appendright(tickets, t7 );
+    tickets=appendright(tickets, t8 );
+    tickets=appendright(tickets, t9 );
+    tickets=appendright(tickets, t10 );
+    tickets=appendright(tickets, t11 );
+    tickets=appendright(tickets, t12 );
+    tickets=appendright(tickets, t13 );
+    tickets=appendright(tickets, t14 );
+    tickets=appendright(tickets, t15 );
+    tickets=appendright(tickets, t16 );
+    tickets=appendright(tickets, t17 );
+    tickets=appendright(tickets, t18 );
+    tickets=appendright(tickets, t19 );
+    tickets=appendright(tickets, t20 );
+    tickets=appendright(tickets, t21 );
+    tickets=appendright(tickets, t22 );
+    tickets=appendright(tickets, t23 );
+    tickets=appendright(tickets, t24 );
+    tickets=appendright(tickets, t25 );
+    tickets=appendright(tickets, t26 );
+    tickets=appendright(tickets, t27 );
+    tickets=appendright(tickets, t28 );
+    tickets=appendright(tickets, t29 );
+    tickets=appendright(tickets, t30 );
+    tickets=appendright(tickets, t31 );
+    tickets=appendright(tickets, t32 );
+    tickets=appendright(tickets, t33 );
+    tickets=appendright(tickets, t34 );
+    tickets=appendright(tickets, t35 );
+    tickets=appendright(tickets, t36 );
+    tickets=appendright(tickets, t37 );
+    tickets=appendright(tickets, t38 );
+    tickets=appendright(tickets, t39 );
+    tickets=appendright(tickets, t40 );
+    tickets=appendright(tickets, t41 );
+    tickets=appendright(tickets, t42 );
+    tickets=appendright(tickets, t43 );
+    tickets=appendright(tickets, t44 );
+    tickets=appendright(tickets, t45 );
+    tickets=appendright(tickets, t46 );
+    tickets=appendright(tickets, t47 );
+    tickets=appendright(tickets, t48 );
+    tickets=appendright(tickets, t49 );
+    tickets=appendright(tickets, t50 );
+    tickets=appendright(tickets, t51 );
+    tickets=appendright(tickets, t52 );
+    tickets=appendright(tickets, t53 );
+    tickets=appendright(tickets, t54 );
+    tickets=appendright(tickets, t55 );
+    tickets=appendright(tickets, t56 );
+    tickets=appendright(tickets, t57 );
+    tickets=appendright(tickets, t58 );
+    tickets=appendright(tickets, t59 );
+    tickets=appendright(tickets, t60 );
+    tickets=appendright(tickets, t61 );
+    tickets=appendright(tickets, t62 );
+    tickets=appendright(tickets, t63 );
+    tickets=appendright(tickets, t64 );
+    tickets=appendright(tickets, t65 );
+    tickets=appendright(tickets, t66 );
+    tickets=appendright(tickets, t67 );
+    tickets=appendright(tickets, t68 );
+    tickets=appendright(tickets, t69 );
+    tickets=appendright(tickets, t70 );
+    tickets=appendright(tickets, t71 );
+    tickets=appendright(tickets, t72 );
+    tickets=appendright(tickets, t73 );
+    tickets=appendright(tickets, t74 );
+    tickets=appendright(tickets, t75 );
+    tickets=appendright(tickets, t76 );
+    tickets=appendright(tickets, t77 );
+    tickets=appendright(tickets, t78 );
+    tickets=appendright(tickets, t79 );
+    tickets=appendright(tickets, t80 );
+    tickets=appendright(tickets, t81 );
+    tickets=appendright(tickets, t82 );
+    tickets=appendright(tickets, t83 );
+    tickets=appendright(tickets, t84 );
+    tickets=appendright(tickets, t85 );
+    tickets=appendright(tickets, t86 );
+    tickets=appendright(tickets, t87 );
+    tickets=appendright(tickets, t88 );
+    tickets=appendright(tickets, t89 );
+    tickets=appendright(tickets, t90 );
+    tickets=appendright(tickets, t91 );
+    tickets=appendright(tickets, t92 );
+    tickets=appendright(tickets, t93 );
+    tickets=appendright(tickets, t94 );
+    tickets=appendright(tickets, t95 );
+    tickets=appendright(tickets, t96 );
+    tickets=appendright(tickets, t97 );
+    tickets=appendright(tickets, t98 );
+    tickets=appendright(tickets, t99 );
+  
+  	[DC: server5] Shop shop = new Shop(tickets);
+  
+  	[DC: server6] Bank bank = new Bank();
+	
+  	[DC: server2] User u1 = new User("Beau De Clercq", 24, "BE64xxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u2 = new User("Mitchel Pyl", 24, "BE64xxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u3 = new User("Wannes Marynen", 24, "BE56xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u4 = new User("Lander", 23, "BE56xxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u5 = new User("Randy", 23, "BE56xxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u6 = new User("Ben", 23, "BE64xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u7 = new User("Tristan", 24, "BE32xxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u8 = new User("Sten", 24, "BE3264xxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u9 = new User("Q", 26, "BE3256xxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u10 = new User("Ceder", 24, "BE56xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u11 = new User("Tim", 24, "BE56xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u12 = new User("Niels", 24, "BE56xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u13 = new User("Brent", 26, "BE64xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u14 = new User("Jitse", 26, "BE32xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u15 = new User("Stephen", 26, "BE32xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u16 = new User("Len", 30, "BE32xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u17 = new User("Steven", 32, "BE64xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u18 = new User("Willem", 33, "BE36xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u19 = new User("Luna", 24, "BE32xxxxxxxxxxxx", "visa", "email");
+  	[DC: server2] User u20 = new User("Federico", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u21 = new User("Sam", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u22 = new User("Michael", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u23 = new User("Cedric", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u24 = new User("Lorin", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u25 = new User("Stijn", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u26 = new User("Jasper", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u27 = new User("Dorien", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u28 = new User("Eline", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u29 = new User("Senne", 22, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server3] User u30 = new User("Pieter", 25, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u31 = new User("Lars", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u32 = new User("Igor", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u33 = new User("Stan", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u34 = new User("Lucas", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u35 = new User("Iscander", 24, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u36 = new User("Benny", 36, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u37 = new User("Hans", 54, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u38 = new User("Els", 59, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u39 = new User("Annie", 64, "BExxxxxxxxxxxxxx", "visa", "email");
+  	[DC: server4] User u40 = new User("Toon", 38, "BExxxxxxxxxxxxxx", "visa", "email");
+  
+    Fut<Bool> f1 = u1!register();
+    Fut<Bool> f2 = u2!register();
+    Fut<Bool> f3 = u3!register();
+    Fut<Bool> f4 = u4!register();
+    Fut<Bool> f5 = u5!register();
+    Fut<Bool> f6 = u6!register();
+    Fut<Bool> f7 = u7!register();
+    Fut<Bool> f8 = u8!register();
+    Fut<Bool> f9 = u9!register();
+    Fut<Bool> f10 = u10!register();
+    Fut<Bool> f11 = u11!register();
+    Fut<Bool> f12 = u12!register();
+    Fut<Bool> f13 = u13!register();
+    Fut<Bool> f14 = u14!register();
+    Fut<Bool> f15 = u15!register();
+    Fut<Bool> f16 = u16!register();
+    Fut<Bool> f17 = u17!register();
+    Fut<Bool> f18 = u18!register();
+    Fut<Bool> f19 = u19!register();
+    Fut<Bool> f20 = u20!register();
+    Fut<Bool> f21 = u21!register();
+    Fut<Bool> f22 = u22!register();
+    Fut<Bool> f23 = u23!register();
+    Fut<Bool> f24 = u24!register();
+    Fut<Bool> f25 = u25!register();
+    Fut<Bool> f26 = u26!register();
+    Fut<Bool> f27 = u27!register();
+    Fut<Bool> f28 = u28!register();
+    Fut<Bool> f29 = u29!register();
+    Fut<Bool> f30 = u30!register();
+    Fut<Bool> f31 = u31!register();
+    Fut<Bool> f32 = u32!register();
+    Fut<Bool> f33 = u33!register();
+    Fut<Bool> f34 = u34!register();
+    Fut<Bool> f35 = u35!register();
+    Fut<Bool> f36 = u36!register();
+    Fut<Bool> f37 = u37!register();
+    Fut<Bool> f38 = u38!register();
+    Fut<Bool> f39 = u39!register();
+    Fut<Bool> f40 = u40!register();
+  
+  	await f1?;
+  	u1!getCredentials();
+  	await f9?;
+  	u9!getCredentials();
+  	await f8?;
+  	u8!getCredentials();
+  	await f29?;
+  	u29.getCredentials();
+  
+  	Fut<Bool> s1 = t1!bookTicket(bank, u1);
+    Fut<Bool> s2 = t1!bookTicket(bank, u2);
+    Fut<Bool> s3 = t1!bookTicket(bank, u3);
+    Fut<Bool> s4 = t1!bookTicket(bank, u4);
+    Fut<Bool> s5 = t1!bookTicket(bank, u5);
+    Fut<Bool> s6 = t1!bookTicket(bank, u6);
+    Fut<Bool> s7 = t1!bookTicket(bank, u7);
+    Fut<Bool> s8 = t1!bookTicket(bank, u8);
+    Fut<Bool> s9 = t1!bookTicket(bank, u9);
+    Fut<Bool> s10 = t1!bookTicket(bank, u10);
+    
+  	await s10?;
+  	await s9?;
+  	await s8?;
+  	await s7?;
+  	await s6?;
+  	await s5?;
+  	await s4?;
+  	await s3?;
+  	await s2?;
+  	await s1?;
+  	Bool ss1 = s1.get;
+  	Bool ss2 = s2.get;
+  	Bool ss3 = s3.get;
+  	Bool ss4 = s4.get;
+  	Bool ss5 = s5.get;
+  	Bool ss6 = s6.get;
+  	Bool ss7 = s7.get;
+  	Bool ss8 = s8.get;
+  	Bool ss9 = s9.get;
+  	Bool ss10 = s10.get;
+  
+  	if (ss1){
+    	println("user1 booked ticket 1");
+    }
+  	else {
+    	println("user1 failed to book ticket 1");
+    }
+  
+  	if (ss2){
+    	println("user2 booked ticket 1");
+    }
+  	else {
+    	println("user2 failed to book ticket 1");
+    }
+  
+  	if (ss3){
+    	println("user3 booked ticket 1");
+    }
+  	else {
+    	println("user3 failed to book ticket 1");
+    }
+  
+  
+  
+}

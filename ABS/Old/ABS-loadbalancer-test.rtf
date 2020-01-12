@@ -1,0 +1,796 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2511
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 // duration(x, y) means waiting at least x miliseconds and at most y miliseconds\
+\
+module TML;\
+import * from ABS.DC;\
+\
+/*Int BANK_1 = ;\
+Int BANK_2 = ;\
+Int BANK_3 = ;*/\
+\
+interface Client \{\
+\}\
+\
+class ClosedClient (SE ep, Int cycle, Rat cost, Int nbrOfJobs) implements Client \{ \
+  Int jobcount = 0;\
+  Unit run() \{\
+    await duration(cycle, cycle);\
+    Bool result = await ep!invokeService(cost); \
+    jobcount = jobcount + 1; \
+    if (jobcount < nbrOfJobs) \{ this!run(); \}\
+  \}\
+\}\
+\
+class OpenClient (SE ep, Int cycle, Rat cost, Int nbrOfJobs) implements Client \{ \
+  Int jobcount = 0;\
+  Unit run() \{\
+    Fut<Bool> fresult = ep!invokeService(cost); \
+    jobcount = jobcount + 1;\
+    await duration(cycle, cycle);\
+    if (jobcount < nbrOfJobs) \{ this!run(); \} \
+    await fresult?; \
+    Bool result = fresult.get;\
+  \} \
+\}\
+\
+interface Worker \{\
+  Bool process(Rat taskCost, Time started, Duration deadline);\
+\}\
+\
+class WorkerObject() implements Worker \{\
+\
+  Bool process(Rat taskCost, Time started, Duration deadline) \{\
+    [Cost: taskCost] skip;\
+    Duration remainingTime = subtractFromDuration(deadline, timeDifference(now(),started)); \
+    await duration(1, 10000);\
+    return True;\
+  \}\
+\
+\}\
+\
+interface LoadBalancer \{\
+  Unit addWorker(Worker w); \
+  Worker getWorker();\
+  Unit releaseWorker(Worker w); \
+  Worker firingWorker();\
+  Int getNbrAvailableW();\
+  Int getNbrInuseW();\
+\}\
+\
+\
+class RoundRobinLoadBalancer() implements LoadBalancer \{\
+    List<Worker> available = Nil; \
+  	List<Worker> inuse = Nil;\
+  \
+  	Unit addWorker(Worker w)\{\
+      available = appendright(available,w);\
+  	\}\
+\
+    Worker getWorker()\{\
+      await (available != Nil);\
+      Worker w = head(available); \
+      available = tail(available); \
+      inuse = appendright(inuse,w); \
+      return w;\
+    \}\
+\
+    Unit releaseWorker(Worker w)\{\
+      available = appendright(available,w); \
+      inuse = without(inuse,w);\
+    \}\
+  \
+    Worker firingWorker()\{\
+      await (available != Nil);\
+      Worker w = head(reverse(available));\
+      available = without(available,w); \
+      return w;\
+    \}\
+  \
+	Int getNbrAvailableW() \{ \
+      Int a =length(available); \
+      return a;\
+    \}\
+\
+  	Int getNbrInuseW() \{\
+      Int i = length(inuse);\
+      return i;\
+    \}\
+\
+\}\
+\
+interface SE \{\
+	Bool invokeService(Rat cost);\
+\}\
+\
+class ServiceEndpoint(LoadBalancer lb, Duration responseTime) implements SE \{\
+	Bool invokeService(Rat cost)\{\
+      Time started = now();\
+      Worker w = await lb!getWorker();\
+      Bool success = await w!process(cost,started,responseTime);\
+      await lb!releaseWorker(w);\
+      return success;\
+    \}\
+\}\
+\
+interface AutoScaler\{\
+  	Unit run();\
+	Unit resize();\
+\}\
+\
+class AutoScaler(CloudProvider cloud, LoadBalancer lb, Int nbrOfWorkers, Int nResources, Int cycle) implements AutoScaler \{\
+  Unit run()\{\
+    Int ctr = 0;\
+    while (ctr<nbrOfWorkers) \{\
+      Fut<DC> fs = cloud!launchInstance(map[Pair(Speed, nResources)]);\
+      DC vm = fs.get;\
+      [DC: vm] Worker w = new WorkerObject();\
+      lb!addWorker(w);\
+      ctr=ctr+1;\
+    \}\
+    this!resize();\
+  \}\
+\
+  Unit resize()\{\
+    Int ctr = 0;\
+    await duration(cycle, cycle);\
+    Int available = await lb!getNbrAvailableW();\
+    Int inuse = await lb!getNbrInuseW();\
+    if (available < ((available+inuse)/4))\{\
+      ctr = 0;\
+      Rat extraworkers= 2 * inuse;\
+      while (ctr<extraworkers) \{\
+        Fut<DC> fs = cloud!launchInstance(map[Pair(Speed, nResources)]);\
+        DC vm = fs.get;\
+        [DC: vm] Worker w = new WorkerObject();\
+        await lb!addWorker(w);\
+        ctr=ctr+1;\
+      \}\
+    \}\
+    if ((inuse/3 < available) && (available > nbrOfWorkers))\{\
+      ctr = 0;\
+      Rat removeworkers= available/2;\
+      while (ctr<removeworkers) \{\
+        Worker w = await lb!firingWorker();\
+        ctr=ctr+1;\
+      \}\
+    \}\
+    this!resize();\
+  \}\
+  \
+\}\
+\
+\
+interface User \{\
+    Bool register();\
+  	Bool authenticate();\
+  	Bool tickets();\
+	String getName();\
+	String getEmail();\
+  	String getCCtype();\
+\}\
+\
+class User(String name, Int age, String cctype, String email, Keyvault k) implements User \{\
+    Bool register() \{\
+      await duration(10, 99/2);\
+      println("Registered " + name);\
+      return True;\
+    \}\
+  \
+  	Bool authenticate()\{\
+      await duration(10, 59/2);\
+      return True;\
+    \}\
+  \
+  	Bool tickets()\{\
+      await duration(30, 99/2);\
+      println("Printing tickets");\
+      return True;\
+    \}\
+	\
+	String getName() \{\
+      	k.encrypt();\
+		return name;\
+	\}\
+	\
+	String getEmail() \{\
+      	k.encrypt();\
+		return email;\
+	\}\
+  \
+  	String getCCtype() \{\
+      	k.encrypt();\
+		return cctype;\
+	\}\
+	\
+\}\
+\
+interface Shop \{\
+	Bool buyTickets(Int amount, User u, String date1, String date2);\
+\}\
+\
+class Shop(Bank b, Keyvault k, Tickets t, Duration responseTime) implements Shop \{\
+	Bool buyTickets(Int amount, User u, String date1, String date2)\{\
+      	Bool status = True;\
+    	if (amount>4)\{\
+          	println("Too many tickets ordered, abort");\
+        	status = False;\
+        \}\
+		Bool ticket_status = t.checkAvailable(date1, date2, amount);\
+      	if (ticket_status)\{\
+          	String cctype = await u!getCCtype();\
+			Bool temp = k.decrypt();\
+          	Bool payment = await b!process(42, cctype);\
+          	if (!payment)\{\
+            	status = False;\
+				t!releaseTickets(date1, date2, amount);\
+            \}\
+          	else\{\
+            	println("Tickets have been successfully booked");\
+            \}\
+        \}\
+      	else\{\
+			status = False;\
+		\}\
+      	return status;\
+    \}\
+\}\
+\
+interface Bank \{\
+	Bool process(Int price, String cctype);\
+\}\
+\
+class Bank(Keyvault k) implements Bank \{\
+	Bool process(Int price, String cctype)\{\
+      	Bool status = True;\
+    	if (cctype == "visa")\{\
+        	await duration(2000, 8000); \
+        \}\
+      	else if (cctype == "maestro")\{\
+        	await duration(5000, 15000);\
+        \}\
+      	else if (cctype == "mastercard")\{\
+        	await duration(10, 60);\
+        \}\
+      	return status;\
+    \}\
+  \
+\}\
+\
+interface Keyvault \{\
+	Bool encrypt();\
+	Bool decrypt();\
+\}\
+\
+class Keyvault() implements Keyvault \{\
+	Bool encrypt()\{\
+    	await duration(40, 50);\
+      	return True;\
+    \}\
+	Bool decrypt()\{\
+    	await duration(40, 50);\
+      	return True;\
+    \}\
+\}\
+\
+interface Tickets \{\
+	Bool checkAvailable(String date1, String date2, Int amount);\
+  	Bool releaseTickets(String date1, String date2, Int amount);\
+  	Bool addTickets(String date1, String date2, Int amount);\
+\}\
+\
+class Tickets() implements Tickets\{\
+  	Map<Pair<String, String>, Int> tickets = map[];\
+  \
+	Bool checkAvailable(String date1, String date2, Int amount)\{\
+      	Bool status = True;\
+    	Pair<String, String> period = Pair(date1, date2);\
+      	Int available = lookupDefault(tickets, period, 0);\
+        if (amount >= available) \{\
+          status = False;\
+        \}\
+        else\{\
+          Int temp = available;\
+          available = temp-amount;\
+          tickets = put(tickets, period, available);\
+          status = True;\
+        \}\
+      	return status;\
+    \}\
+  \
+  	Bool releaseTickets(String date1, String date2, Int amount)\{\
+    	Pair<String, String> period = Pair(date1, date2);\
+      	Int available = lookupDefault(tickets, period, 0);\
+        Int temp = available;\
+        available = temp+amount;\
+        tickets = put(tickets, period, available);\
+      	return True;\
+    \}\
+  \
+  	Bool addTickets(String date1, String date2, Int amount)\{\
+    	Pair<String, String> period = Pair(date1, date2);\
+      	Pair<Pair<String, String>, Int> p = Pair(period, amount);\
+      	tickets = insert(tickets, p);\
+      	return True;\
+    \}\
+\}\
+\
+\{\
+  	CloudProvider p = new CloudProvider("TML");\
+  	await p!setInstanceDescriptions(\
+        map[Pair("T2_MICRO", map[Pair(Memory,1), Pair(Speed,1)]),\
+            Pair("T2_SMALL", map[Pair(Memory,2), Pair(Speed,1)]),\
+            Pair("T2_MEDIUM", map[Pair(Memory,4), Pair(Speed,2)]),\
+            Pair("M4_LARGE", map[Pair(Memory,8), Pair(Speed,2)])]);\
+  \
+  	//DC  server1 = await p!launchInstanceNamed("T2_SMALL");\
+	/*DC  server2 = await p!launchInstanceNamed("T2_SMALL");\
+	DC  server3 = await p!launchInstanceNamed("T2_SMALL");\
+	DC  server4 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server5 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server6 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server7 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server8 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server9 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server10 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server11 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server12 = await p!launchInstanceNamed("M4_LARGE");\
+  \
+  	[DC: server7] Keyvault kv = new Keyvault();\
+  	[DC: server5] Bank bank = new Bank(kv);\
+	[DC: server8] LoadBalancer lb = new RoundRobinLoadBalancer();\
+	[DC: server10] Tickets t = new Tickets();\
+  	Int nmbrTickets = 1000;	// This values can be changed for testing purposes\
+	t!addTickets("01-07-2020", "03-07-2020", nmbrTickets);\
+	[DC: server6] Shop shop = new Shop(bank, kv, t, Duration(1000));\
+  	[DC: server9] Shop shop2 = new Shop(bank, kv, t, Duration(1000));\
+  	[DC: server11] Shop shop3 = new Shop(bank, kv, t, Duration(1000));\
+  	[DC: server12] Shop shop4 = new Shop(bank, kv, t, Duration(1000));\
+  \
+  	/*lb.addWorker(shop);\
+  	/*lb.addWorker(shop2);\
+  	lb.addWorker(shop3);\
+  	lb.addWorker(shop4);\
+	\
+	Int nrJobs = 10;	// Number can be changed for testing purposes\
+  	println(toString(now()));\
+	while(nrJobs>0)\{\
+		Shop s = lb.getWorker();\
+		User u = new User(toString(nrJobs), 22, "mastercard", "email", kv);\
+		s!buyTickets(4, u, "01-07-2020", "03-07-2020");\
+		lb!releaseWorker(s);\
+		nrJobs = nrJobs - 1;\
+      		//println(toString(now()));\
+	\} \
+	println(toString(now())); */\
+  \
+\
+	Int nResources = 25; Int nWorkers=4;\
+	Int interval = 1; Int nbrOfJobs = 100;  \
+	Duration respTime = Duration(5); Int nCloseClients = 4;\
+	Int nOpenClients = 10; Rat taskCost = 18000;\
+	\
+\
+  	LoadBalancer lb = new RoundRobinLoadBalancer();\
+  	AutoScaler scaler = new AutoScaler(p,lb,nWorkers,nResources,interval);\
+  	SE endpoint = new ServiceEndpoint(lb, respTime);\
+  \
+  	Int nClts = nOpenClients;\
+    while (nClts > 0) \{ \
+      new OpenClient(endpoint, 1, taskCost, nbrOfJobs); \
+      nClts = nClts - 1;\
+    \} \
+  	await duration(50,50); \
+  	nClts = nOpenClients;\
+    while (nClts > 0) \{ \
+      new OpenClient(endpoint, 1, taskCost, nbrOfJobs); \
+      nClts = nClts - 1;\
+    \} \
+  	\
+  \
+  	println("DONE");\
+\}\
+\
+\
+\
+\
+// duration(x, y) means waiting at least x miliseconds and at most y miliseconds\
+\
+module TML;\
+import * from ABS.DC;\
+\
+/*Int BANK_1 = ;\
+Int BANK_2 = ;\
+Int BANK_3 = ;*/\
+\
+interface Client \{\
+\}\
+\
+class ClosedClient (SE ep, Int cycle, Rat cost, Int nbrOfJobs) implements Client \{ \
+  Int jobcount = 0;\
+  Unit run() \{\
+    await duration(cycle, cycle);\
+    Bool result = await ep!invokeService(cost); \
+    jobcount = jobcount + 1; \
+    if (jobcount < nbrOfJobs) \{ this!run(); \}\
+  \}\
+\}\
+\
+class OpenClient (SE ep, Int cycle, Rat cost, Int nbrOfJobs) implements Client \{ \
+  Int jobcount = 0;\
+  Unit run() \{\
+    Fut<Bool> fresult = ep!invokeService(cost); \
+    jobcount = jobcount + 1;\
+    await duration(cycle, cycle);\
+    if (jobcount < nbrOfJobs) \{ this!run(); \} \
+    await fresult?; \
+    Bool result = fresult.get;\
+  \} \
+\}\
+\
+interface Worker \{\
+  Bool process(Rat taskCost, Time started, Duration deadline);\
+\}\
+\
+class WorkerObject() implements Worker \{\
+\
+  Bool process(Rat taskCost, Time started, Duration deadline) \{\
+    [Cost: taskCost] skip;\
+    Duration remainingTime = subtractFromDuration(deadline, timeDifference(now(),started)); \
+    await duration(1, 10000);\
+    return True;\
+  \}\
+\
+\}\
+\
+interface LoadBalancer \{\
+  Unit addWorker(Worker w); \
+  Worker getWorker();\
+  Unit releaseWorker(Worker w); \
+  Worker firingWorker();\
+  Int getNbrAvailableW();\
+  Int getNbrInuseW();\
+\}\
+\
+\
+class RoundRobinLoadBalancer() implements LoadBalancer \{\
+    List<Worker> available = Nil; \
+  	List<Worker> inuse = Nil;\
+  \
+  	Unit addWorker(Worker w)\{\
+      available = appendright(available,w);\
+  	\}\
+\
+    Worker getWorker()\{\
+      await (available != Nil);\
+      Worker w = head(available); \
+      available = tail(available); \
+      inuse = appendright(inuse,w); \
+      return w;\
+    \}\
+\
+    Unit releaseWorker(Worker w)\{\
+      available = appendright(available,w); \
+      inuse = without(inuse,w);\
+    \}\
+  \
+    Worker firingWorker()\{\
+      await (available != Nil);\
+      Worker w = head(reverse(available));\
+      available = without(available,w); \
+      return w;\
+    \}\
+  \
+	Int getNbrAvailableW() \{ \
+      Int a =length(available); \
+      return a;\
+    \}\
+\
+  	Int getNbrInuseW() \{\
+      Int i = length(inuse);\
+      return i;\
+    \}\
+\
+\}\
+\
+interface SE \{\
+	Bool invokeService(Rat cost);\
+\}\
+\
+class ServiceEndpoint(LoadBalancer lb, Duration responseTime) implements SE \{\
+	Bool invokeService(Rat cost)\{\
+      Time started = now();\
+      Worker w = await lb!getWorker();\
+      Bool success = await w!process(cost,started,responseTime);\
+      await lb!releaseWorker(w);\
+      return success;\
+    \}\
+\}\
+\
+interface AutoScaler\{\
+  	Unit run();\
+	Unit resize();\
+\}\
+\
+class AutoScaler(CloudProvider cloud, LoadBalancer lb, Int nbrOfWorkers, Int nResources, Int cycle) implements AutoScaler \{\
+  Unit run()\{\
+    Int ctr = 0;\
+    while (ctr<nbrOfWorkers) \{\
+      Fut<DC> fs = cloud!launchInstance(map[Pair(Speed, nResources)]);\
+      DC vm = fs.get;\
+      [DC: vm] Worker w = new WorkerObject();\
+      lb!addWorker(w);\
+      ctr=ctr+1;\
+    \}\
+    this!resize();\
+  \}\
+\
+  Unit resize()\{\
+    Int ctr = 0;\
+    await duration(cycle, cycle);\
+    Int available = await lb!getNbrAvailableW();\
+    Int inuse = await lb!getNbrInuseW();\
+    if (available < ((available+inuse)/4))\{\
+      ctr = 0;\
+      Rat extraworkers= 2 * inuse;\
+      while (ctr<extraworkers) \{\
+        Fut<DC> fs = cloud!launchInstance(map[Pair(Speed, nResources)]);\
+        DC vm = fs.get;\
+        [DC: vm] Worker w = new WorkerObject();\
+        await lb!addWorker(w);\
+        ctr=ctr+1;\
+      \}\
+    \}\
+    if ((inuse/3 < available) && (available > nbrOfWorkers))\{\
+      ctr = 0;\
+      Rat removeworkers= available/2;\
+      while (ctr<removeworkers) \{\
+        Worker w = await lb!firingWorker();\
+        ctr=ctr+1;\
+      \}\
+    \}\
+    this!resize();\
+  \}\
+  \
+\}\
+\
+\
+interface User \{\
+    Bool register();\
+  	Bool authenticate();\
+  	Bool tickets();\
+	String getName();\
+	String getEmail();\
+  	String getCCtype();\
+\}\
+\
+class User(String name, Int age, String cctype, String email, Keyvault k) implements User \{\
+    Bool register() \{\
+      await duration(10, 99/2);\
+      println("Registered " + name);\
+      return True;\
+    \}\
+  \
+  	Bool authenticate()\{\
+      await duration(10, 59/2);\
+      return True;\
+    \}\
+  \
+  	Bool tickets()\{\
+      await duration(30, 99/2);\
+      println("Printing tickets");\
+      return True;\
+    \}\
+	\
+	String getName() \{\
+      	k.encrypt();\
+		return name;\
+	\}\
+	\
+	String getEmail() \{\
+      	k.encrypt();\
+		return email;\
+	\}\
+  \
+  	String getCCtype() \{\
+      	k.encrypt();\
+		return cctype;\
+	\}\
+	\
+\}\
+\
+interface Shop \{\
+	Bool buyTickets(Int amount, User u, String date1, String date2);\
+\}\
+\
+class Shop(Bank b, Keyvault k, Tickets t, Duration responseTime) implements Shop \{\
+	Bool buyTickets(Int amount, User u, String date1, String date2)\{\
+      	Bool status = True;\
+    	if (amount>4)\{\
+          	println("Too many tickets ordered, abort");\
+        	status = False;\
+        \}\
+		Bool ticket_status = t.checkAvailable(date1, date2, amount);\
+      	if (ticket_status)\{\
+          	String cctype = await u!getCCtype();\
+			Bool temp = k.decrypt();\
+          	Bool payment = await b!process(42, cctype);\
+          	if (!payment)\{\
+            	status = False;\
+				t!releaseTickets(date1, date2, amount);\
+            \}\
+          	else\{\
+            	println("Tickets have been successfully booked");\
+            \}\
+        \}\
+      	else\{\
+			status = False;\
+		\}\
+      	return status;\
+    \}\
+\}\
+\
+interface Bank \{\
+	Bool process(Int price, String cctype);\
+\}\
+\
+class Bank(Keyvault k) implements Bank \{\
+	Bool process(Int price, String cctype)\{\
+      	Bool status = True;\
+    	if (cctype == "visa")\{\
+        	await duration(2000, 8000); \
+        \}\
+      	else if (cctype == "maestro")\{\
+        	await duration(5000, 15000);\
+        \}\
+      	else if (cctype == "mastercard")\{\
+        	await duration(10, 60);\
+        \}\
+      	return status;\
+    \}\
+  \
+\}\
+\
+interface Keyvault \{\
+	Bool encrypt();\
+	Bool decrypt();\
+\}\
+\
+class Keyvault() implements Keyvault \{\
+	Bool encrypt()\{\
+    	await duration(40, 50);\
+      	return True;\
+    \}\
+	Bool decrypt()\{\
+    	await duration(40, 50);\
+      	return True;\
+    \}\
+\}\
+\
+interface Tickets \{\
+	Bool checkAvailable(String date1, String date2, Int amount);\
+  	Bool releaseTickets(String date1, String date2, Int amount);\
+  	Bool addTickets(String date1, String date2, Int amount);\
+\}\
+\
+class Tickets() implements Tickets\{\
+  	Map<Pair<String, String>, Int> tickets = map[];\
+  \
+	Bool checkAvailable(String date1, String date2, Int amount)\{\
+      	Bool status = True;\
+    	Pair<String, String> period = Pair(date1, date2);\
+      	Int available = lookupDefault(tickets, period, 0);\
+        if (amount >= available) \{\
+          status = False;\
+        \}\
+        else\{\
+          Int temp = available;\
+          available = temp-amount;\
+          tickets = put(tickets, period, available);\
+          status = True;\
+        \}\
+      	return status;\
+    \}\
+  \
+  	Bool releaseTickets(String date1, String date2, Int amount)\{\
+    	Pair<String, String> period = Pair(date1, date2);\
+      	Int available = lookupDefault(tickets, period, 0);\
+        Int temp = available;\
+        available = temp+amount;\
+        tickets = put(tickets, period, available);\
+      	return True;\
+    \}\
+  \
+  	Bool addTickets(String date1, String date2, Int amount)\{\
+    	Pair<String, String> period = Pair(date1, date2);\
+      	Pair<Pair<String, String>, Int> p = Pair(period, amount);\
+      	tickets = insert(tickets, p);\
+      	return True;\
+    \}\
+\}\
+\
+\{\
+  	CloudProvider p = new CloudProvider("TML");\
+  	await p!setInstanceDescriptions(\
+        map[Pair("T2_MICRO", map[Pair(Memory,1), Pair(Speed,1)]),\
+            Pair("T2_SMALL", map[Pair(Memory,2), Pair(Speed,1)]),\
+            Pair("T2_MEDIUM", map[Pair(Memory,4), Pair(Speed,2)]),\
+            Pair("M4_LARGE", map[Pair(Memory,8), Pair(Speed,2)])]);\
+  \
+  	//DC  server1 = await p!launchInstanceNamed("T2_SMALL");\
+	/*DC  server2 = await p!launchInstanceNamed("T2_SMALL");\
+	DC  server3 = await p!launchInstanceNamed("T2_SMALL");\
+	DC  server4 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server5 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server6 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server7 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server8 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server9 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server10 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server11 = await p!launchInstanceNamed("M4_LARGE");\
+  	DC  server12 = await p!launchInstanceNamed("M4_LARGE");\
+  \
+  	[DC: server7] Keyvault kv = new Keyvault();\
+  	[DC: server5] Bank bank = new Bank(kv);\
+	[DC: server8] LoadBalancer lb = new RoundRobinLoadBalancer();\
+	[DC: server10] Tickets t = new Tickets();\
+  	Int nmbrTickets = 1000;	// This values can be changed for testing purposes\
+	t!addTickets("01-07-2020", "03-07-2020", nmbrTickets);\
+	[DC: server6] Shop shop = new Shop(bank, kv, t, Duration(1000));\
+  	[DC: server9] Shop shop2 = new Shop(bank, kv, t, Duration(1000));\
+  	[DC: server11] Shop shop3 = new Shop(bank, kv, t, Duration(1000));\
+  	[DC: server12] Shop shop4 = new Shop(bank, kv, t, Duration(1000));\
+  \
+  	/*lb.addWorker(shop);\
+  	/*lb.addWorker(shop2);\
+  	lb.addWorker(shop3);\
+  	lb.addWorker(shop4);\
+	\
+	Int nrJobs = 10;	// Number can be changed for testing purposes\
+  	println(toString(now()));\
+	while(nrJobs>0)\{\
+		Shop s = lb.getWorker();\
+		User u = new User(toString(nrJobs), 22, "mastercard", "email", kv);\
+		s!buyTickets(4, u, "01-07-2020", "03-07-2020");\
+		lb!releaseWorker(s);\
+		nrJobs = nrJobs - 1;\
+      		//println(toString(now()));\
+	\} \
+	println(toString(now())); */\
+  \
+\
+	Int nResources = 25; Int nWorkers=4;\
+	Int interval = 1; Int nbrOfJobs = 100;  \
+	Duration respTime = Duration(5); Int nCloseClients = 4;\
+	Int nOpenClients = 10; Rat taskCost = 18000;\
+	\
+\
+  	LoadBalancer lb = new RoundRobinLoadBalancer();\
+  	AutoScaler scaler = new AutoScaler(p,lb,nWorkers,nResources,interval);\
+  	SE endpoint = new ServiceEndpoint(lb, respTime);\
+  \
+  	Int nClts = nOpenClients;\
+    while (nClts > 0) \{ \
+      new OpenClient(endpoint, 1, taskCost, nbrOfJobs); \
+      nClts = nClts - 1;\
+    \} \
+  	await duration(50,50); \
+  	nClts = nOpenClients;\
+    while (nClts > 0) \{ \
+      new OpenClient(endpoint, 1, taskCost, nbrOfJobs); \
+      nClts = nClts - 1;\
+    \} \
+  	\
+  \
+  	println("DONE");\
+\}\
+\
+\
+\
+\
+}
