@@ -10,6 +10,6 @@ data = [1.49492, 3.66265, 2.85902, 1.85234, 2.85404, 3.25728, 3.46318, 0.75151, 
 print(data)
 
 fig1, ax1 = plt.subplots()
-ax1.set_title('Basic Plot')
+ax1.set_title('Response times')
 ax1.boxplot(data)
 plt.show()

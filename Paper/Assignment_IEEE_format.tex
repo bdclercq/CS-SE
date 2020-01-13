@@ -56,7 +56,7 @@ Beau.DeClercq@student.uantwerpen.be}
 \maketitle
 
 \begin{abstract}
-This paper will discuss the possibility of implementing a cloud-based ticketing service for large events like Tomorrowland. In the first section we will list the different requirements to which the system should adhere and the assumptions we made. The second section will be used to discuss a preliminary version designed using the ABS language in order to perform some basic simulations and verify if it would be feasible to build the system. We conclude this paper by describing a proof of concept for this system, a conclusion based on both the simulated model and proof of concept on whether the system could be build and give some indications as to what the following steps should be.
+This paper will discuss the possibility of implementing a cloud-based ticketing service for large events like Tomorrowland. In the first section we will list the different requirements to which the system should adhere and the assumptions we made. The second section will be used to discuss a preliminary version designed using the ABS language in order to perform some basic simulations and verify if it would be feasible to build the system. We conclude this paper by describing a proof of concept for this system, a conclusion based on both the simulated model and proof of concept on whether the system could be built and give some indications as to what the following steps should be.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -76,7 +76,7 @@ Cloud, ABS, Docker
 \section{Assumptions}
 For this project a few assumptions were made:
 \begin{itemize}
-	\item During registration, the encryption key for each user was immediately stored in the keyvault such that when the tickets will go on sale this keyvault can be distributed to the other services and thereby reducing the potential bottleneck.\\
+	\item During registration, the encryption key for each user was immediately stored in the keyvault such that when the tickets will go on sale this keyvault can be distributed to the other services, thereby reducing the potential bottleneck.\\
 	We believe that this will not compromise the security requirements due to the fact that all services should be equally protected against potential attacks.
 \end{itemize}
 
@@ -163,9 +163,9 @@ When running the system with different configurations results as shown in TABLE 
 	\end{tabular}}
 	\caption{\label{tab:banking-time-influence-asynchronous}Influence of transaction times in an asynchronous system.}
 \end{table*}\noindent
-From these tables it is clear that, in order to let this project succeed, we need to let go of the synchronous approach and focus on the asynchronous one. Another conclusion is that when the bank transaction times are relatively close to each other, the impact they have on the overall run-time is rather limited.\\
+From these tables it is clear that, in order for this project to succeed, we need to let go of the synchronous approach and focus on the asynchronous one. Another conclusion is that when the bank transaction times are relatively close to each other, the impact they have on the overall run-time is rather limited.\\
 A small remark to the results is that only requests from the "tickets available" scenario are shown, the ones for the "no tickets available" scenario are handled instantly.\\
-Table \ref{tab:banking-time-influence-asynchronous} clearly show that we can keep the total handling time for all request reasonably low by going for a combination of low bank transaction times (which need to be negotiated) and a high number of servers.
+Table \ref{tab:banking-time-influence-asynchronous} clearly shows that we can keep the total handling time for all requests reasonably low by going for a combination of low bank transaction times (which need to be negotiated) and a high number of servers.
 
 \subsection{Meeting the requirements}
 The first requirement of the system is that a user should never have to wait for more than 10 minutes. To this end there should be some sort of load balancing in place for the system to handle peak-loads.\\
